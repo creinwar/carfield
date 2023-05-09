@@ -12,7 +12,7 @@ package:
 dependencies:
   register_interface: { git: https://github.com/pulp-platform/register_interface.git,   rev: 19163bb5191d2669a8cbc267cdd4ce8e60f20746 } # branch: main
   axi:                { git: https://github.com/pulp-platform/axi.git,                  rev: 5e85c7e5ee38a797b9ef6bbed0cf0d4fde473c67 } # branch: axi_rt-tbenz
-  cheshire:           { git: https://github.com/pulp-platform/cheshire.git,             rev: 403cffb66f769dac4ff2e2f269574778340a2389 } # branch: axi_rt-tbenz
+  cheshire:           { git: https://github.com/pulp-platform/cheshire.git,             rev: fcf15a3fd749725292387299b5e4f95c3a69e6e1 } # branch: axi_rt-tbenz
   hyperbus:           { git: https://github.com/pulp-platform/hyperbus.git,             rev: f4fb8e2de617603a0cde908d0b245438239b0026 } # branch: main
   car_l2:             { git: git@iis-git.ee.ethz.ch:carfield/carfield_l2_mem.git,       rev: 505c35a8df7f042fc8fc07c5dc40bc6412f7b27d } # branch: main
   safety_island:      { git: git@iis-git.ee.ethz.ch:carfield/safety-island.git,         rev: 67f0b4ef4c3b08fcd423bc5e70db144b196cd2d1 } # branch: master
@@ -41,6 +41,7 @@ sources:
   - hw/regs/carfield_reg_pkg.sv
   - hw/regs/carfield_reg_top.sv
   # Level 1
+  - hw/axi_err_slv_wrapper.sv
   - hw/cheshire_wrap.sv
   - hw/hyperbus_wrap.sv
   - hw/l2_wrap.sv
@@ -57,3 +58,19 @@ sources:
   - target: spyglass
     files:
       - scripts/spyglass/src/carfield_wrap.sv
+
+  - target: any(fpga, xilinx)
+    defines:
+      SYNTHESIS: 1
+    include_dirs:
+      - target/xilinx/src/overrides/include
+    files:
+      - target/xilinx/src/overrides/cv32e40p_fpu_wrap.sv
+      - target/xilinx/src/overrides/fpnew_wrapper.sv
+      - target/xilinx/src/overrides/tc_clk_xilinx.sv
+      - target/xilinx/src/overrides/tc_sram_xilinx.sv
+      - target/xilinx/src/carfield_top_xilinx.sv
+      - target/xilinx/src/dram_wrapper.sv
+  - target: all(fpga, test)
+    files:
+      - target/xilinx/src/tb_carfield_top_xilinx.sv
