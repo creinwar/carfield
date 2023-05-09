@@ -41,6 +41,7 @@ sources:
   - hw/regs/carfield_reg_pkg.sv
   - hw/regs/carfield_reg_top.sv
   # Level 1
+  - hw/axi_err_slv_wrapper.sv
   - hw/cheshire_wrap.sv
   - hw/hyperbus_wrap.sv
   - hw/l2_wrap.sv
@@ -58,6 +59,21 @@ sources:
     files:
       - scripts/spyglass/src/carfield_wrap.sv
 
+  - target: any(fpga, xilinx)
+    defines:
+      SYNTHESIS: 1
+    include_dirs:
+      - target/xilinx/src/overrides/include
+    files:
+      - target/xilinx/src/overrides/cv32e40p_fpu_wrap.sv
+      - target/xilinx/src/overrides/fpnew_wrapper.sv
+      - target/xilinx/src/overrides/tc_clk_xilinx.sv
+      - target/xilinx/src/overrides/tc_sram_xilinx.sv
+      - target/xilinx/src/carfield_top_xilinx.sv
+      - target/xilinx/src/dram_wrapper.sv
+  - target: all(fpga, test)
+    files:
+      - target/xilinx/src/tb_carfield_top_xilinx.sv
   - target: synthesis
     files:
       - target/synth/carfield_synth_wrap.sv
