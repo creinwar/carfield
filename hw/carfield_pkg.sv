@@ -138,6 +138,7 @@ localparam bit [2:0] AxiNumExtMst = 3'd1 + 3'd1 + 3'd1 + 3'd1;
 localparam bit [2:0] NumExtIntrs = 3'd1;
 
 
+
 // Safety island configuration
 localparam safety_island_cfg_t SafetyIslandCfg = '{
     HartId:             32'd8,
