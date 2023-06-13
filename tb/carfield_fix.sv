@@ -479,7 +479,7 @@ module carfield_soc_fixture;
   endtask
 
   task load_secd_binary;
-    input string binary;                   // File name
+    input string binary;
     logic [31:0] section_addr, section_len;
     byte         buffer[];
 

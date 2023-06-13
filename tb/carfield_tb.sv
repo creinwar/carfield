@@ -69,11 +69,11 @@ module tb_carfield_soc;
           fix.chs_vip.jtag_elf_run(chs_preload_elf);
           fix.chs_vip.jtag_wait_for_eoc(exit_code);
         end 1: begin  // Serial Link
-          // Security Island
-          if (secd_preload_elf != "") begin
-            fix.chs_vip.slink_elf_run(secd_preload_elf);
+          // Safety Island
+          if (safed_preload_elf != "") begin
+            fix.chs_vip.slink_elf_run(safed_preload_elf);
+            fix.chs_vip.slink_wait_for_eoc(exit_code);
           end
-          // TODO: Safety Island
           // Cheshire
           fix.chs_vip.slink_elf_run(chs_preload_elf);
           fix.chs_vip.slink_wait_for_eoc(exit_code);
