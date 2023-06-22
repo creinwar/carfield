@@ -360,7 +360,7 @@ packages:
     dependencies:
     - axi_slice
   pulp_cluster:
-    revision: bd8182aaa33f2b0ac7bf924621f094a382d8ab17
+    revision: 9338c3722bb2dec4d9aa8e857def19f0a5aa7507
     version: null
     source:
       Git: https://github.com/pulp-platform/pulp_cluster.git
@@ -422,7 +422,7 @@ packages:
     - common_cells
     - common_verification
   riscv:
-    revision: 4ceb402db8619718a9170058bb31f75fcdf7ed1c
+    revision: 4ef49607a0093378d3f6dccce2e673178d6481af
     version: null
     source:
       Git: git@github.com:AlSaqr-platform/riscv_nn.git
