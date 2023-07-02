@@ -12,10 +12,10 @@ package:
 dependencies:
   register_interface: { git: https://github.com/pulp-platform/register_interface.git,   rev: 2bb08879bc2ceabe2b6a0dc283753048a739e27b } # branch: main until newer version tag later than v0.4.0
   axi:                { git: https://github.com/pulp-platform/axi.git,                  version: 0.39.0-beta.9                        } # overridden in Bender.local to use axi-rt feature
-  cheshire:           { git: https://github.com/pulp-platform/cheshire.git,             rev: e5fc1ea4035cbb99a32c7d49f39745861df1c152 } # branch: aottaviano/cva6-clic
+  cheshire:           { git: https://github.com/pulp-platform/cheshire.git,             rev: 9627d111085fb93a06d9ad24ecc04e017366605c } # branch: aottaviano/vip-rebase, on top of aottaviano/cva6-clic
   hyperbus:           { git: https://github.com/pulp-platform/hyperbus.git,             rev: 2adb7271438cdb96c19fbaf3e2a6bf89ffeee568 } # branch: lv/phys_in_use
   car_l2:             { git: git@iis-git.ee.ethz.ch:carfield/carfield_l2_mem.git,       rev: 4239b2a510d65aa110bcc8a070e434cabd1a8b9a } # branch: main
-  safety_island:      { git: git@iis-git.ee.ethz.ch:carfield/safety-island.git,         rev: 60e768a3ef29f47339e31674d497293f5a768893 } # branch: atops
+  safety_island:      { git: git@iis-git.ee.ethz.ch:carfield/safety-island.git,         rev: b681e050d266aae04cdc54f9db879e3e64dff206 } # branch: main
   pulp_cluster:       { git: https://github.com/pulp-platform/pulp_cluster.git,         rev: 314f9a04f8dad4a5eeb0b9e8ad84898c6dc3f81e } # branch: yt/carfield-integration
   opentitan:          { git: https://github.com/alsaqr-platform/opentitan.git,          rev: 5ce64a6225e971c1e00ece29aa485f23a31aa7b2 } # branch: carfield
   mailbox_unit:       { git: git@github.com:pulp-platform/mailbox_unit.git,             version: 1.1.0                                }
@@ -32,6 +32,9 @@ workspace:
   package_links:
     cheshire: cheshire
     spatz: spatz
+    safety_island: safety_island
+    opentitan: opentitan
+    pulp_cluster: pulp_cluster
 
 sources:
   # Source files grouped in levels. Files in level 0 have no dependencies on files in this
@@ -52,6 +55,7 @@ sources:
   - target: test
     files:
       - tb/hyp_vip/s27ks0641.v
+      - tb/vip_carfield_soc.sv
       - tb/carfield_fix.sv
       - tb/carfield_tb.sv
 
@@ -62,7 +66,7 @@ sources:
   - target: all(synthesis, not(fpga))
     files:
       - target/synth/carfield_synth_wrap.sv
-  
+
   - target: all(xilinx, fpga)
     files:
       - target/xilinx/src/carfield_top_xilinx.sv

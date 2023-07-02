@@ -64,15 +64,6 @@ packages:
     dependencies:
     - axi
     - common_cells
-  axi_obi:
-    revision: 87bb718809fb5a20f8e5bad537fdf43aeef6db2a
-    version: null
-    source:
-      Git: git@iis-git.ee.ethz.ch:carfield/axi_obi.git
-    dependencies:
-    - axi
-    - common_cells
-    - obi
   axi_riscv_atomics:
     revision: 97dcb14ef057cbe5bd70dda2060b5bb9e7e04c6d
     version: 0.7.0
@@ -126,7 +117,7 @@ packages:
     - register_interface
     - tech_cells_generic
   cheshire:
-    revision: e5fc1ea4035cbb99a32c7d49f39745861df1c152
+    revision: 9627d111085fb93a06d9ad24ecc04e017366605c
     version: null
     source:
       Git: https://github.com/pulp-platform/cheshire.git
@@ -151,7 +142,7 @@ packages:
     revision: bed98f88761ca86706c36c4c33ac600d88c42373
     version: null
     source:
-      Git: https://github.com/pulp-platform/clic.git
+      Git: https://github.com/pulp-platform/clic
     dependencies:
     - common_cells
     - register_interface
@@ -189,7 +180,7 @@ packages:
     revision: 9c07fa860593b2caabd9b5681740c25fac04b878
     version: 0.2.3
     source:
-      Git: https://github.com/pulp-platform/common_verification
+      Git: https://github.com/pulp-platform/common_verification.git
     dependencies: []
   cv32e40p:
     revision: 9b77611a1d0c681f4819798d95422b0b895528a2
@@ -413,7 +404,7 @@ packages:
     - hwpe-stream
     - tech_cells_generic
   redundancy_cells:
-    revision: 6e10650b50c7b40f7f81602acf61526330c4d69d
+    revision: 6a011b6f5acf3eca202ed847d6c64474a0bc7cb5
     version: null
     source:
       Git: https://github.com/pulp-platform/redundancy_cells.git
@@ -449,14 +440,14 @@ packages:
     - common_cells
     - tech_cells_generic
   safety_island:
-    revision: 60e768a3ef29f47339e31674d497293f5a768893
+    revision: b681e050d266aae04cdc54f9db879e3e64dff206
     version: null
     source:
       Git: git@iis-git.ee.ethz.ch:carfield/safety-island.git
     dependencies:
     - apb
     - axi
-    - axi_obi
+    - axi_riscv_atomics
     - bus_err_unit
     - clic
     - cluster_interconnect

@@ -6,7 +6,7 @@ overrides:
   axi:                  { git: https://github.com/pulp-platform/axi.git                   , rev:  02307cf26de40c713212148abb947fef87babd61  } # branch: michaero/detailed_mem-rebase, which is rebased on top of the branch axi_rt-tbenz
   apb:                  { git: "https://github.com/pulp-platform/apb.git"                 , version: =0.2.3                                 }
   register_interface:   { git: "https://github.com/pulp-platform/register_interface.git"  , rev: 2bb08879bc2ceabe2b6a0dc283753048a739e27b } # branch main until new version tag newer than v0.4.0
-  redundancy_cells:     { git: "https://github.com/pulp-platform/redundancy_cells.git"    , rev: "6e10650b50c7b40f7f81602acf61526330c4d69d" } # branch: michaero/hmr-alt
+  redundancy_cells:     { git: "https://github.com/pulp-platform/redundancy_cells.git"    , rev: "6a011b6f5acf3eca202ed847d6c64474a0bc7cb5" } # branch: michaero/hmr-alt
   tech_cells_generic:   { git: "https://github.com/pulp-platform/tech_cells_generic.git"  , version: =0.2.11                                }
   riscv-dbg:            { git: "https://github.com/pulp-platform/riscv-dbg.git"           , version: =0.8.0                                 }
   idma:                 { git: "https://github.com/pulp-platform/idma.git"                , rev:     437ffa9                                }
