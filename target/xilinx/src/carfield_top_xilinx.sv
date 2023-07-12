@@ -60,12 +60,12 @@ module carfield_top_xilinx
 `endif
 
 `ifdef USE_QSPI
-  output logic        qspi_clk,
-  input  logic        qspi_dq0,
-  input  logic        qspi_dq1,
-  input  logic        qspi_dq2,
-  input  logic        qspi_dq3,
-  output logic        qspi_cs_b,
+// Internal macro to access flash
+`ifndef USE_STARTUPE3
+  output logic        qspi_clk_o,
+  input  logic [3:0]  qspi_dq_i,
+  output logic        qspi_cs_b_o,
+`endif
 `endif
 
 `ifdef USE_VGA
@@ -188,9 +188,10 @@ module carfield_top_xilinx
   xlnx_clk_wiz i_xlnx_clk_wiz (
     .clk_in1_p,
     .clk_in1_n,
-    .reset(master_clk),
-    // 50 MHz clock out
-    .clk_out1( soc_clk )
+    .clk_100(         ),
+    .clk_50 (         ),
+    .clk_20 ( soc_clk ),
+    .clk_10 (         )
   );
 
   //rstgen i_rstgen_main (
@@ -280,7 +281,6 @@ module carfield_top_xilinx
   );
 `endif
 
-
   //////////////////
   // SPI Adaption //
   //////////////////
@@ -297,9 +297,9 @@ module carfield_top_xilinx
   logic [1:0] spi_cs_en_n;
   logic [3:0] spi_sd_en_n;
 
-  assign spi_sck_en = ~spi_sck_en_n;
-  assign spi_cs_en = ~spi_cs_en_n;
-  assign spi_sd_en = ~spi_sd_en_n;
+  //////////////////
+  // SD           //
+  //////////////////
 
 `ifdef USE_SD
   // Assert reset low => Apply power to the SD Card
@@ -320,11 +320,59 @@ module carfield_top_xilinx
   assign spi_sd_soc_in[3] = 1'b0;
 `endif
 
+  //////////////////
+  // QSPI         //
+  //////////////////
+
 `ifdef USE_QSPI
-  assign qspi_clk  = spi_sck_en    ? spi_sck_soc       : 1'b1;
-  assign qspi_cs_b = spi_cs_soc[0];
-  assign spi_sd_soc_in[1] = qspi_dq0;
-`endif
+  logic                 qspi_clk;
+  logic                 qspi_clk_ts;
+  logic [3:0]           qspi_dqi;
+  logic [3:0]           qspi_dqo_ts;
+  logic [3:0]           qspi_dqo;
+  logic [SpihNumCs-1:0] qspi_cs_b;
+logic [SpihNumCs-1:0] qspi_cs_b_ts;
+
+  assign qspi_clk      = spi_sck_soc;
+  assign qspi_cs_b     = spi_cs_soc;
+  assign qspi_dqo      = spi_sd_soc_out;
+  assign spi_sd_soc_in = qspi_dqi;
+  // Tristate - Enable
+  assign qspi_clk_ts  = ~(spi_sck_en);
+  assign qspi_cs_b_ts = ~(spi_cs_en);
+  assign qspi_dqo_ts  = ~(spi_sd_en);
+
+`ifdef USE_STARTUPE3
+  STARTUPE3 #(
+     .PROG_USR("FALSE"),    // Activate program event security feature. Requires encrypted bitstreams.
+     .SIM_CCLK_FREQ(0.0)    // Set the Configuration Clock Frequency (ns) for simulation.
+  )
+  STARTUPE3_inst (
+     .CFGCLK    (),         // CONFIG 1-bit output: Configuration main clock output.
+     .CFGMCLK   (),         // CONFIG 1-bit output: Configuration internal oscillator clock output.
+     .DI        (qspi_dqi),
+     .EOS       (),         // CONFIG 1-bit output: Active-High output signal indicating the End Of Startup.
+     .PREQ      (),         // CONFIG 1-bit output: PROGRAM request to fabric output.
+     .DO        (qspi_dqo),
+     .DTS       (qspi_dqo_ts),
+     .FCSBO     (qspi_cs_b[1]),
+     .FCSBTS    (qspi_cs_b_ts[1]),
+     .GSR       (1'b0),
+     .GTS       (1'b0),
+     .KEYCLEARB (1'b1),
+     .PACK      (1'b0),
+     .USRCCLKO  (qspi_clk),
+     .USRCCLKTS (qspi_clk_ts),
+     .USRDONEO  (1'b1),
+     .USRDONETS (1'b1)
+  );
+`else
+  assign qspi_clk_o = qspi_clk;
+  assign qspi_dqi = qspi_dq_i;
+  assign qspi_cs_b_o = qspi_cs_b;
+`endif // USE_STARTUPE3
+
+`endif // USE_QSPI
 
 
   /////////////////////////
@@ -332,22 +380,22 @@ module carfield_top_xilinx
   /////////////////////////
 
   logic rtc_clk_d, rtc_clk_q;
-  logic [4:0] counter_d, counter_q;
+  logic [16:0] counter_d, counter_q;
 
-  // Divide soc_clk (20 MHz) by 20 => 1 MHz RTC Clock
+  // Divide soc_clk (20 MHz) by 610 ~= 32768 Hz RTC Clock
   always_comb begin
     counter_d = counter_q + 1;
     rtc_clk_d = rtc_clk_q;
 
-    if(counter_q == 19) begin
-      counter_d = 5'b0;
+    if(counter_q == 304) begin
+      counter_d = 'b0;
       rtc_clk_d = ~rtc_clk_q;
     end
   end
 
   always_ff @(posedge soc_clk, negedge rst_n) begin
     if(~rst_n) begin
-      counter_q <= 5'b0;
+      counter_q <= 'b0;
       rtc_clk_q <= 0;
     end else begin
       counter_q <= counter_d;
@@ -464,13 +512,13 @@ module carfield_top_xilinx
       .i2c_scl_i                 (),
       .i2c_scl_en_o              (),
       // SPI Host Interface
-      .spih_sck_o                (),
-      .spih_sck_en_o             (),
-      .spih_csb_o                (),
-      .spih_csb_en_o             (),
-      .spih_sd_o                 (),
-      .spih_sd_en_o              (),
-      .spih_sd_i                 (),
+      .spih_sck_o                (spi_sck_soc),
+      .spih_sck_en_o             (spi_sck_en),
+      .spih_csb_o                (spi_cs_soc),
+      .spih_csb_en_o             (spi_cs_en),
+      .spih_sd_o                 (spi_sd_soc_out),
+      .spih_sd_en_o              (spi_sd_en),
+      .spih_sd_i                 (spi_sd_soc_in),
       // GPIO interface
       .gpio_i                    (),
       .gpio_o                    (),

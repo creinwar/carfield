@@ -16,6 +16,7 @@ ifeq ($(BOARD),vcu128)
 	XILINX_PART  ?= xcvu37p-fsvh2892-2L-e
 	XILINX_BOARD ?= xilinx.com:vcu128:part0:1.0
 	ips-names    := xlnx_clk_wiz xlnx_vio
+	FPGA_PATH    ?= xilinx_tcf/Xilinx/091847100638A
 endif
 ifeq ($(BOARD),genesys2)
 	XILINX_PART  ?= xc7k325tffg900-2
@@ -50,7 +51,7 @@ VIVADOENV ?=  PROJECT=$(PROJECT)            \
               FPGA_PATH=$(FPGA_PATH)        \
               BIT=$(bit)
 MODE        ?= gui
-VIVADOFLAGS ?= -nojournal -mode $(MODE) -source scripts/prologue.tcl
+VIVADOFLAGS ?= -nojournal -mode $(MODE)
 
 car-xil-all: $(bit)
 
@@ -61,7 +62,7 @@ $(mcs): $(bit)
 # Compile bitstream
 $(bit): $(ips) $(CAR_XIL_DIR)/scripts/add_sources.tcl
 	@mkdir -p $(out)
-	cd $(CAR_XIL_DIR) && $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source scripts/run.tcl
+	cd $(CAR_XIL_DIR) && $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source scripts/prologue.tcl -source scripts/run.tcl
 	cp $(CAR_XIL_DIR)/$(PROJECT).runs/impl_1/$(PROJECT)* $(out)
 
 # Generate ips
@@ -79,6 +80,9 @@ car-xil-gui:
 car-xil-program: #$(bit)
 	@echo "Programming board $(BOARD) ($(XILINX_PART))"
 	cd $(CAR_XIL_DIR) && $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source scripts/program.tcl
+car-xil-flash:
+	@echo "Flashing spi"
+	cd $(CAR_XIL_DIR) && $(VIVADOENV) $(VIVADO) $(VIVADOFLAGS) -source scripts/flash_spi.tcl
 
 car-xil-clean:
 	cd $(CAR_XIL_DIR) && rm -rf scripts/add_sources.tcl* *.log *.jou *.str *.mif *.xci *.xpr .Xil/ $(out) $(PROJECT).srcs $(PROJECT).cache $(PROJECT).hw $(PROJECT).ioplanning $(PROJECT).ip_user_files $(PROJECT).runs $(PROJECT).sim

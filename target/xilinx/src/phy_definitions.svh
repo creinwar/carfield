@@ -6,7 +6,6 @@
 
 `ifdef TARGET_VCU128
   `define USE_RESET
-  // 20 MHz clock wiz
   `define USE_CLK_WIZ
   // External jtag on gpios
   `define USE_JTAG
@@ -16,6 +15,9 @@
   // RAMs
   `define HypNumPhys 1
   `define HypNumChips 2
+  // QSPI
+  `define USE_QSPI
+  `define USE_STARTUPE3
   //`USE_DDR4
   /* DRAM outputs aux clock at 200MHz */
   //`define DDR_CLK_DIVIDER 4'h4
@@ -23,7 +25,6 @@
 
 `ifdef TARGET_GENESYS2
   `define USE_RESETN
-  // 20 MHz clock wiz
   `define USE_CLK_WIZ
   // JTAG on fpga pins
   `define USE_JTAG
