@@ -24,6 +24,14 @@ module carfield
   parameter islands_cfg_t IslandsCfg = carfield_pkg::IslandsCfgDefault,
   parameter int unsigned HypNumPhys  = 2,
   parameter int unsigned HypNumChips = 2,
+`ifdef NO_HYPERBUS // bender-xilinx.mk
+  parameter int unsigned LlcIdWidth,
+  parameter int unsigned LlcArWidth,
+  parameter int unsigned LlcAwWidth,
+  parameter int unsigned LlcBWidth,
+  parameter int unsigned LlcRWidth,
+  parameter int unsigned LlcWWidth,
+`endif
   parameter type reg_req_t           = logic,
   parameter type reg_rsp_t           = logic
 ) (
@@ -119,6 +127,7 @@ module carfield
   output logic [SlinkNumChan-1:0]                     slink_rcv_clk_o,
   input  logic [SlinkNumChan-1:0][SlinkNumLanes-1:0]  slink_i,
   output logic [SlinkNumChan-1:0][SlinkNumLanes-1:0]  slink_o,
+`ifndef NO_HYPERBUS // bender-xilinx.mk
   // HyperBus interface
   output logic [HypNumPhys-1:0][HypNumChips-1:0]      hyper_cs_no,
   output logic [HypNumPhys-1:0]                       hyper_ck_o,
@@ -130,6 +139,24 @@ module carfield
   output logic [HypNumPhys-1:0][7:0]                  hyper_dq_o,
   output logic [HypNumPhys-1:0]                       hyper_dq_oe_o,
   output logic [HypNumPhys-1:0]                       hyper_reset_no,
+`else
+  // LLC interface
+  output logic [LlcArWidth-1:0] llc_ar_data,
+  output logic [    LogDepth:0] llc_ar_wptr,
+  output logic [    LogDepth:0] llc_ar_rptr,
+  output logic [LlcAwWidth-1:0] llc_aw_data,
+  output logic [    LogDepth:0] llc_aw_wptr,
+  output logic [    LogDepth:0] llc_aw_rptr,
+  input  logic [ LlcBWidth-1:0] llc_b_data,
+  input  logic [    LogDepth:0] llc_b_wptr,
+  input  logic [    LogDepth:0] llc_b_rptr,
+  input  logic [ LlcRWidth-1:0] llc_r_data,
+  input  logic [    LogDepth:0] llc_r_wptr,
+  input  logic [    LogDepth:0] llc_r_rptr,
+  output logic [ LlcWWidth-1:0] llc_w_data,
+  output logic [    LogDepth:0] llc_w_wptr,
+  output logic [    LogDepth:0] llc_w_rptr,
+`endif // NO_HYPERBUS
   // External reg interface slaves (async)
   // Currently for PLL and Padframe
   output logic     [1:0]                              ext_reg_async_slv_req_o,
@@ -389,6 +416,7 @@ localparam int unsigned IntClusterAxiMstRWidth  =
 carfield_reg_req_t [iomsb(Cfg.RegExtNumSlv-2):0] ext_reg_req;
 carfield_reg_rsp_t [iomsb(Cfg.RegExtNumSlv-2):0] ext_reg_rsp;
 
+`ifndef NO_HYPERBUS // bender-xilinx.mk
 localparam int unsigned LlcIdWidth = Cfg.AxiMstIdWidth   +
                                      $clog2(AxiIn.num_in)+
                                      Cfg.LlcNotBypass    ;
@@ -410,6 +438,7 @@ localparam int unsigned LlcRWidth  = (2**LogDepth)*
 localparam int unsigned LlcWWidth  = (2**LogDepth)*
                                       axi_pkg::w_width(Cfg.AxiDataWidth,
                                                        Cfg.AxiUserWidth );
+`endif
 
 logic hyper_isolate_req, hyper_isolated_rsp;
 logic secd_isolate_req;
@@ -1041,6 +1070,7 @@ cheshire_wrap #(
   .vga_blue_o  (                 )
 );
 
+`ifndef NO_HYPERBUS // bender-xilinx.mk
 // Hyperbus
 hyperbus_wrap      #(
   .NumChips         ( HypNumChips                           ),
@@ -1111,6 +1141,7 @@ hyperbus_wrap      #(
   .hyper_dq_oe_o,
   .hyper_reset_no
 );
+`endif // NO_HYPERBUS
 
 // Reconfigurable L2 Memory
 // Host Clock Domain

@@ -7,18 +7,17 @@
 `ifdef TARGET_VCU128
   `define USE_RESET
   `define USE_CLK_WIZ
-  // External jtag on gpios
   `define USE_JTAG
   `define USE_JTAG_VDDGND
-  // Reset VIO
   `define USE_VIO
   // RAMs
   `define HypNumPhys 1
   `define HypNumChips 2
-  // QSPI
   `define USE_QSPI
   `define USE_STARTUPE3
-  //`USE_DDR4
+  `ifdef NO_HYPERBUS
+    `define USE_DDR4
+  `endif
   /* DRAM outputs aux clock at 200MHz */
   //`define DDR_CLK_DIVIDER 4'h4
 `endif

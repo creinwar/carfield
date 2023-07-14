@@ -124,11 +124,38 @@ module carfield_top_xilinx
   `endif
   logic sys_rst;
 
-  (* dont_touch = "yes" *) wire master_clk;
-  (* dont_touch = "yes" *) wire master_sync_rst;
-  (* dont_touch = "yes" *) wire soc_clk;
+  (* dont_touch = "yes" *) wire soc_clk, dram_clk;
   (* dont_touch = "yes" *) wire rst_n;
 
+  //////////////////
+  // Carfield Cfg //
+  //////////////////
+
+`ifndef GEN_PULP_CLUSTER
+`define GEN_PULP_CLUSTER 0
+`endif
+`ifndef GEN_SAFETY_ISLAND
+`define GEN_SAFETY_ISLAND 0
+`endif
+`ifndef GEN_SPATZ_CLUSTER
+`define GEN_SPATZ_CLUSTER 0
+`endif
+`ifndef GEN_OPEN_TITAN
+`define GEN_OPEN_TITAN 0
+`endif
+
+  localparam cheshire_cfg_t Cfg = carfield_pkg::CarfieldCfgDefault;
+  `CHESHIRE_TYPEDEF_ALL(carfield_, Cfg)
+
+  localparam islands_cfg_t IslandsCfg = '{
+    EnPulpCluster   : `GEN_PULP_CLUSTER,
+    EnSafetyIsland  : `GEN_SAFETY_ISLAND,
+    EnSpatzCluster  : `GEN_SPATZ_CLUSTER,
+    EnOpenTitan     : `GEN_OPEN_TITAN,
+    EnCan           : 0,
+    EnEthernet      : 0,
+    default         : '1
+  };
 
   ///////////////////
   // GPIOs         // 
@@ -184,25 +211,26 @@ module carfield_top_xilinx
   // Clock Wizard // 
   //////////////////
 
-`ifdef USE_CLK_WIZ
   xlnx_clk_wiz i_xlnx_clk_wiz (
     .clk_in1_p,
     .clk_in1_n,
-    .clk_100(         ),
-    .clk_50 (         ),
-    .clk_20 ( soc_clk ),
-    .clk_10 (         )
+    .clk_100( dram_clk ),
+    .clk_50 (          ),
+    .clk_20 ( soc_clk  ),
+    .clk_10 (          )
   );
 
-  //rstgen i_rstgen_main (
-  //  .clk_i        ( soc_clk          ),
-  //  .rst_ni       ( ~sys_rst         ),
-  //  .test_mode_i  ( testmode_i       ),
-  //  .rst_no       ( rst_n            ),
-  //  .init_no      (                  ) // keep open
-  //);
-  assign rst_n = ~sys_rst;
-`endif
+  /////////////////////
+  // Reset Generator //
+  /////////////////////
+
+  rstgen i_rstgen_main (
+    .clk_i        ( soc_clk                  ),
+    .rst_ni       ( ~sys_rst                 ),
+    .test_mode_i  ( 0                        ),
+    .rst_no       ( rst_n                    ),
+    .init_no      (                          ) // keep open
+  );
 
 
   //////////////////
@@ -210,26 +238,24 @@ module carfield_top_xilinx
   //////////////////
 
 `ifdef USE_DDR
-
   dram_wrapper #(
-    .axi_soc_aw_chan_t ( axi_llc_aw_chan_t ),
-    .axi_soc_w_chan_t  ( axi_llc_w_chan_t ),
-    .axi_soc_b_chan_t  ( axi_llc_b_chan_t ),
-    .axi_soc_ar_chan_t ( axi_llc_ar_chan_t ),
-    .axi_soc_r_chan_t  ( axi_llc_r_chan_t ),
-    .axi_soc_req_t     (axi_llc_req_t),
-    .axi_soc_resp_t    (axi_llc_rsp_t)
+    .axi_soc_aw_chan_t ( carfield_axi_llc_aw_chan_t ),
+    .axi_soc_w_chan_t  ( carfield_axi_llc_w_chan_t  ),
+    .axi_soc_b_chan_t  ( carfield_axi_llc_b_chan_t  ),
+    .axi_soc_ar_chan_t ( carfield_axi_llc_ar_chan_t ),
+    .axi_soc_r_chan_t  ( carfield_axi_llc_r_chan_t  ),
+    .axi_soc_req_t     ( carfield_axi_llc_req_t     ),
+    .axi_soc_resp_t    ( carfield_axi_llc_rsp_t     )
   ) i_dram_wrapper (
     // Rst
-    .sys_rst_i                  ( cpu_reset   ),
-    .soc_resetn_i               ( rst_n       ),
-    .soc_clk_i                  ( soc_clk     ),
-    // Clk rst out
-    .dram_clk_o                 ( master_clk           ),
-    .dram_rst_o                 ( master_sync_reset    ),
+    .sys_rst_i                  ( sys_rst   ),
+    .soc_resetn_i               ( rst_n     ),
+    .soc_clk_i                  ( soc_clk   ),
+    // Sys clk
+    .dram_clk_i                 ( dram_clk  ),
     // Axi
-    .soc_req_i                  ( '0  ),
-    .soc_rsp_o                  (     ),
+    .soc_req_i                  ( axi_llc_mst_req  ),
+    .soc_rsp_o                  ( axi_llc_mst_rsp  ),
     // Phy
     .*
   );
@@ -417,36 +443,70 @@ logic [SpihNumCs-1:0] qspi_cs_b_ts;
   );
 `endif
 
+  ///////////////////
+  // LLC interface //
+  ///////////////////
+  
+`ifdef NO_HYPERBUS // bender-xilinx.mk
+  localparam axi_in_t   AxiIn   = gen_axi_in(Cfg);
+  localparam int unsigned LlcIdWidth = Cfg.AxiMstIdWidth+$clog2(AxiIn.num_in)+Cfg.LlcNotBypass;
+  localparam int unsigned LlcArWidth = (2**LogDepth)*axi_pkg::ar_width(Cfg.AddrWidth,LlcIdWidth,Cfg.AxiUserWidth);
+  localparam int unsigned LlcAwWidth = (2**LogDepth)*axi_pkg::aw_width(Cfg.AddrWidth,LlcIdWidth,Cfg.AxiUserWidth);
+  localparam int unsigned LlcBWidth  = (2**LogDepth)*axi_pkg::b_width(LlcIdWidth,Cfg.AxiUserWidth);
+  localparam int unsigned LlcRWidth  = (2**LogDepth)*axi_pkg::r_width(Cfg.AxiDataWidth,LlcIdWidth,Cfg.AxiUserWidth);
+  localparam int unsigned LlcWWidth  = (2**LogDepth)*axi_pkg::w_width(Cfg.AxiDataWidth,Cfg.AxiUserWidth);
+  // LLC interface
+  logic [LlcArWidth-1:0] llc_ar_data;
+  logic [    LogDepth:0] llc_ar_wptr;
+  logic [    LogDepth:0] llc_ar_rptr;
+  logic [LlcAwWidth-1:0] llc_aw_data;
+  logic [    LogDepth:0] llc_aw_wptr;
+  logic [    LogDepth:0] llc_aw_rptr;
+  logic [ LlcBWidth-1:0] llc_b_data;
+  logic [    LogDepth:0] llc_b_wptr;
+  logic [    LogDepth:0] llc_b_rptr;
+  logic [ LlcRWidth-1:0] llc_r_data;
+  logic [    LogDepth:0] llc_r_wptr;
+  logic [    LogDepth:0] llc_r_rptr;
+  logic [ LlcWWidth-1:0] llc_w_data;
+  logic [    LogDepth:0] llc_w_wptr;
+  logic [    LogDepth:0] llc_w_rptr;
+  // Axi interface
+  carfield_axi_llc_req_t llc_req;
+  carfield_axi_llc_rsp_t llc_rsp;
 
-  //////////////////
-  // Carfield Cfg //
-  //////////////////
-
-`ifndef GEN_PULP_CLUSTER
-`define GEN_PULP_CLUSTER 0
-`endif
-`ifndef GEN_SAFETY_ISLAND
-`define GEN_SAFETY_ISLAND 0
-`endif
-`ifndef GEN_SPATZ_CLUSTER
-`define GEN_SPATZ_CLUSTER 0
-`endif
-`ifndef GEN_OPEN_TITAN
-`define GEN_OPEN_TITAN 0
-`endif
-
-  localparam cheshire_cfg_t Cfg = carfield_pkg::CarfieldCfgDefault;
-  `CHESHIRE_TYPEDEF_ALL(carfield_, Cfg)
-
-  localparam islands_cfg_t IslandsCfg = '{
-    EnPulpCluster   : `GEN_PULP_CLUSTER,
-    EnSafetyIsland  : `GEN_SAFETY_ISLAND,
-    EnSpatzCluster  : `GEN_SPATZ_CLUSTER,
-    EnOpenTitan     : `GEN_OPEN_TITAN,
-    EnCan           : 0,
-    EnEthernet      : 0,
-    default         : '1
-  };
+  axi_cdc_dst      #(
+  .LogDepth     ( LogDepth                   ),
+  .axi_req_t    ( carfield_axi_llc_req_t     ),
+  .axi_rsp_t    ( carfield_axi_llc_rsp_t     ),
+  .w_chan_t     ( carfield_axi_llc_w_chan_t  ),
+  .b_chan_t     ( carfield_axi_llc_b_chan_t  ),
+  .ar_chan_t    ( carfield_axi_llc_ar_chan_t ),
+  .r_chan_t     ( carfield_axi_llc_r_chan_t  ),
+  .aw_chan_t    ( carfield_axi_llc_aw_chan_t )
+  ) i_hyper_cdc_dst (
+  .async_data_slave_aw_data_i ( llc_aw_data ),
+  .async_data_slave_aw_wptr_i ( llc_aw_wptr ),
+  .async_data_slave_aw_rptr_o ( llc_aw_rptr ),
+  .async_data_slave_w_data_i  ( llc_w_data  ),
+  .async_data_slave_w_wptr_i  ( llc_w_wptr  ),
+  .async_data_slave_w_rptr_o  ( llc_w_rptr  ),
+  .async_data_slave_b_data_o  ( llc_b_data  ),
+  .async_data_slave_b_wptr_o  ( llc_b_wptr  ),
+  .async_data_slave_b_rptr_i  ( llc_b_rptr  ),
+  .async_data_slave_ar_data_i ( llc_ar_data ),
+  .async_data_slave_ar_wptr_i ( llc_ar_wptr ),
+  .async_data_slave_ar_rptr_o ( llc_ar_rptr ),
+  .async_data_slave_r_data_o  ( llc_r_data  ),
+  .async_data_slave_r_wptr_o  ( llc_r_wptr  ),
+  .async_data_slave_r_rptr_i  ( llc_r_rptr  ),
+  // synchronous master port
+  .dst_clk_i                  ( soc_clk     ),
+  .dst_rst_ni                 ( rst_n       ),
+  .dst_req_o                  ( llc_req   ),
+  .dst_resp_i                 ( llc_rsp   )
+);
+`endif // NO_HYPERBUS
 
   //////////////////
   // Carfield SoC //
@@ -454,12 +514,21 @@ logic [SpihNumCs-1:0] qspi_cs_b_ts;
 
   logic jtag_host_to_safety, jtag_safety_to_ot;
 
+`ifdef IMPOSSIBLEDEF
   carfield #(
       .Cfg       (carfield_pkg::CarfieldCfgDefault),
       .IslandsCfg(IslandsCfg),
       .reg_req_t(carfield_reg_req_t),
       .reg_rsp_t(carfield_reg_rsp_t),
-      .HypNumPhys   (`HypNumPhys),
+`ifdef NO_HYPERBUS
+      .LlcIdWidth   ( LlcIdWidth ),
+      .LlcArWidth   ( LlcArWidth ),
+      .LlcAwWidth   ( LlcAwWidth ),
+      .LlcBWidth    ( LlcBWidth  ),
+      .LlcRWidth    ( LlcRWidth  ),
+      .LlcWWidth    ( LlcWWidth  ),
+`endif
+      .HypNumPhys   (`HypNumPhys ),
       .HypNumChips  (`HypNumChips)
   ) i_carfield (
       .host_clk_i    (soc_clk),
@@ -467,7 +536,7 @@ logic [SpihNumCs-1:0] qspi_cs_b_ts;
       .alt_clk_i     (soc_clk),
       .rt_clk_i      (rtc_clk_q),
       .pwr_on_rst_ni (rst_n),
-      .test_mode_i   (testmode_i),
+      .test_mode_i   (0),
       // Boot mode selection
       .boot_mode_i   (boot_mode),
       // Cheshire JTAG Interface
@@ -529,22 +598,22 @@ logic [SpihNumCs-1:0] qspi_cs_b_ts;
       .slink_i                   (),
       .slink_o                   ()
 
-      // LLC (DRAM) Interace
-      //.llc_ar_data,
-      //.llc_ar_wptr,
-      //.llc_ar_rptr,
-      //.llc_aw_data,
-      //.llc_aw_wptr,
-      //.llc_aw_rptr,
-      //.llc_b_data,
-      //.llc_b_wptr,
-      //.llc_b_rptr,
-      //.llc_r_data,
-      //.llc_r_wptr,
-      //.llc_r_rptr,
-      //.llc_w_data,
-      //.llc_w_wptr,
-      //.llc_w_rptr,
+      // LLC Interface
+      .llc_ar_data,
+      .llc_ar_wptr,
+      .llc_ar_rptr,
+      .llc_aw_data,
+      .llc_aw_wptr,
+      .llc_aw_rptr,
+      .llc_b_data,
+      .llc_b_wptr,
+      .llc_b_rptr,
+      .llc_r_data,
+      .llc_r_wptr,
+      .llc_r_rptr,
+      .llc_w_data,
+      .llc_w_wptr,
+      .llc_w_rptr,
       //.hyper_cs_n_wire,
       //.hyper_ck_wire,
       //.hyper_ck_n_wire,
@@ -556,5 +625,6 @@ logic [SpihNumCs-1:0] qspi_cs_b_ts;
       //.hyper_dq_oe,
       //.hyper_reset_n_wire
   );
+`endif
 
 endmodule

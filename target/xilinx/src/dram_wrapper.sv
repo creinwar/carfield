@@ -20,6 +20,7 @@ module dram_wrapper #(
 ) (
     // System reset
     input                 sys_rst_i,
+    input                 dram_clk_i,
     // Controller reset
     input                 soc_resetn_i,
     input                 soc_clk_i,
@@ -32,11 +33,7 @@ module dram_wrapper #(
 `endif
     // Dram axi interface
     input  axi_soc_req_t  soc_req_i,
-    output axi_soc_resp_t soc_rsp_o,
-    // Generated clk/rst for SoC
-    output                dram_clk_o,
-    // Synchronous with dram_axi_clk (not dram_clk_o)
-    output                dram_rst_o
+    output axi_soc_resp_t soc_rsp_o
 );
 
   ////////////////////////////////////
@@ -58,12 +55,12 @@ module dram_wrapper #(
   localparam dram_cfg_t cfg = '{
     EnSpill0      : 1,
     EnResizer     : 1,
-    EnCDC         : 1, // 333 MHz
+    EnCDC         : 1, // 333 MHz axi
     EnSpill1      : 1,
     IdWidth       : 4,
     AddrWidth     : 32,
     DataWidth     : 512,
-    StrobeWidth    : 64
+    StrobeWidth   : 64
   };
 `endif
 
@@ -71,12 +68,12 @@ module dram_wrapper #(
   localparam dram_cfg_t cfg = '{
     EnSpill0      : 0,
     EnResizer     : 0,
-    EnCDC         : 1,  // 200 MHz
+    EnCDC         : 1, // 200 MHz axi
     EnSpill1      : 1,
     IdWidth       : 6,
     AddrWidth     : 30,
     DataWidth     : 64,
-    StrobeWidth    : 8
+    StrobeWidth   : 8
   };
 `endif
 
@@ -86,8 +83,7 @@ module dram_wrapper #(
                    logic[$bits(soc_req_i.ar.user)-1:0])
 
   // Clock on which is clocked the DRAM AXI
-  // (May or may not be the dram_clk_o)
-  logic dram_axi_clk;
+  logic dram_axi_clk, dram_rst_o;
 
   // Signals before resizing
   axi_soc_req_t soc_spill_req, spill_resizer_req;
@@ -287,7 +283,8 @@ module dram_wrapper #(
 
   xlnx_mig_ddr4 i_dram (
     // Rst
-    .sys_rst                   (sys_rst_i),
+    .sys_rst                   (sys_rst_i), // Active high
+    .c0_sys_clk_i              (dram_clk_i),
     .c0_ddr4_aresetn           (soc_resetn_i),
     // Clk rst out
     .c0_ddr4_ui_clk            (dram_axi_clk),
@@ -330,6 +327,26 @@ module dram_wrapper #(
     .c0_ddr4_s_axi_rresp       (spill_dram_rsp.r.resp),
     .c0_ddr4_s_axi_rlast       (spill_dram_rsp.r.last),
     .c0_ddr4_s_axi_rvalid      (spill_dram_rsp.r_valid),
+`ifdef TARGET_VCU128
+    // Axi ctrl
+    .c0_ddr4_s_axi_ctrl_awvalid('0),
+    .c0_ddr4_s_axi_ctrl_awready(),
+    .c0_ddr4_s_axi_ctrl_awaddr ('0),
+    .c0_ddr4_s_axi_ctrl_wvalid ('0),
+    .c0_ddr4_s_axi_ctrl_wready (),
+    .c0_ddr4_s_axi_ctrl_wdata  ('0),
+    .c0_ddr4_s_axi_ctrl_bvalid (),
+    .c0_ddr4_s_axi_ctrl_bready ('0),
+    .c0_ddr4_s_axi_ctrl_bresp  (),
+    .c0_ddr4_s_axi_ctrl_arvalid('0),
+    .c0_ddr4_s_axi_ctrl_arready(),
+    .c0_ddr4_s_axi_ctrl_araddr ('0),
+    .c0_ddr4_s_axi_ctrl_rvalid (),
+    .c0_ddr4_s_axi_ctrl_rready ('0),
+    .c0_ddr4_s_axi_ctrl_rdata  (),
+    .c0_ddr4_s_axi_ctrl_rresp  (),
+    .c0_ddr4_interrupt         (),
+`endif
     // Others
     .c0_init_calib_complete    (),  // keep open
     .addn_ui_clkout1           (dram_clk_o),
@@ -338,6 +355,7 @@ module dram_wrapper #(
     // Phy
     .*
   );
+
 `endif  // USE_DDR4
 
 
@@ -348,11 +366,8 @@ module dram_wrapper #(
 
 `ifdef USE_DDR3
 
-  // AXI is already on 200 MHz no need for secondary clock
-  assign dram_clk_o = dram_axi_clk;
-
   xlnx_mig_7_ddr3 i_dram (
-      .sys_rst            (~sys_rst_i),
+      .sys_rst            (sys_rst_i), // Active high
       .ui_clk             (dram_axi_clk),
       .ui_clk_sync_rst    (dram_rst_o),
       .mmcm_locked        (),  // keep open
