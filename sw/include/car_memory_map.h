@@ -64,7 +64,7 @@ extern void *__base_l2;
 #define CAR_WATCHDOG_TIMER_OFFSET    0x7000
 #define CAR_HYPERBUS_CFG_OFFSET      0x9000
 #define CAR_PAD_CFG_OFFSET           0xa000
-#define CAR_SOC_CTRL_OFFSET         0x10000
+#define CAR_SOC_CTRL_OFFSET          0x10000
 
 #define CAR_ETHERNET_BASE_ADDR       (CAR_PERIPHS_BASE_ADDR + CAR_ETHERNET_OFFSET)
 #define CAR_CAN_BASE_ADDR            (CAR_PERIPHS_BASE_ADDR + CAR_CAN_OFFSET)
@@ -76,5 +76,10 @@ extern void *__base_l2;
 #define CAR_SOC_CTRL_BASE_ADDR       (CAR_PERIPHS_BASE_ADDR + CAR_SOC_CTRL_OFFSET)
 
 #define CAR_MBOX_BASE_ADDR           0x40000000
+
+// PLL
+#define CAR_PLL_BASE_ADDRESS         0x20020000
+#define PLL_ADDR_SPACE               0x200
+#define PLL_BASE_ADDRESS(id)         (CAR_PLL_BASE_ADDRESS + (id+1)*PLL_ADDR_SPACE)
 
 #endif /* __CAR_MEMORY_MAP_H */
