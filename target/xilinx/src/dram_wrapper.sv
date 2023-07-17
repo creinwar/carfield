@@ -19,11 +19,11 @@ module dram_wrapper #(
     parameter type axi_soc_resp_t    = logic
 ) (
     // System reset
-    input                 sys_rst_i,
+    (* mark_debug = "true" *) input                 sys_rst_i,
     input                 dram_clk_i,
     // Controller reset
-    input                 soc_resetn_i,
-    input                 soc_clk_i,
+    (* mark_debug = "true" *) input                 soc_resetn_i,
+    (* mark_debug = "true" *) input                 soc_clk_i,
     // Phy interfaces
 `ifdef USE_DDR4
     `DDR4_INTF
@@ -32,8 +32,8 @@ module dram_wrapper #(
     `DDR3_INTF
 `endif
     // Dram axi interface
-    input  axi_soc_req_t  soc_req_i,
-    output axi_soc_resp_t soc_rsp_o
+    (* mark_debug = "true" *) input  axi_soc_req_t  soc_req_i,
+    (* mark_debug = "true" *) output axi_soc_resp_t soc_rsp_o
 );
 
   ////////////////////////////////////
@@ -90,8 +90,10 @@ module dram_wrapper #(
   axi_soc_resp_t soc_spill_rsp, spill_resizer_rsp;
 
   // Signals after resizing
-  axi_ddr_req_t resizer_cdc_req, cdc_spill_req, spill_dram_req;
-  axi_ddr_resp_t resizer_cdc_rsp, cdc_spill_rsp, spill_dram_rsp;
+  axi_ddr_req_t resizer_cdc_req, cdc_spill_req;
+  (* mark_debug = "true" *) axi_ddr_req_t spill_dram_req;
+  axi_ddr_resp_t resizer_cdc_rsp, cdc_spill_rsp;
+  (* mark_debug = "true" *) axi_ddr_resp_t spill_dram_rsp;
 
   // Entry signals
   assign soc_spill_req = soc_req_i;

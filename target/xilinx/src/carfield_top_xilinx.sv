@@ -93,10 +93,8 @@ module carfield_top_xilinx
   `DDR3_INTF
 `endif
 
-`ifdef USE_CLK_WIZ
-  input clk_in1_p,
-  input clk_in1_n,
-`endif
+  input sys_clk_p,
+  input sys_clk_n,
 
   // Phy interface for Hyperbus
 `ifdef USE_HYPERBUS
@@ -115,6 +113,10 @@ module carfield_top_xilinx
 
 );
 
+  ///////////////////////////
+  // Clk reset definitions //
+  ///////////////////////////
+
   `ifdef USE_RESET
   logic cpu_resetn;
   assign cpu_resetn = ~cpu_reset;
@@ -124,38 +126,8 @@ module carfield_top_xilinx
   `endif
   logic sys_rst;
 
-  (* dont_touch = "yes" *) wire soc_clk, dram_clk;
+  (* dont_touch = "yes" *) wire soc_clk;
   (* dont_touch = "yes" *) wire rst_n;
-
-  //////////////////
-  // Carfield Cfg //
-  //////////////////
-
-`ifndef GEN_PULP_CLUSTER
-`define GEN_PULP_CLUSTER 0
-`endif
-`ifndef GEN_SAFETY_ISLAND
-`define GEN_SAFETY_ISLAND 0
-`endif
-`ifndef GEN_SPATZ_CLUSTER
-`define GEN_SPATZ_CLUSTER 0
-`endif
-`ifndef GEN_OPEN_TITAN
-`define GEN_OPEN_TITAN 0
-`endif
-
-  localparam cheshire_cfg_t Cfg = carfield_pkg::CarfieldCfgDefault;
-  `CHESHIRE_TYPEDEF_ALL(carfield_, Cfg)
-
-  localparam islands_cfg_t IslandsCfg = '{
-    EnPulpCluster   : `GEN_PULP_CLUSTER,
-    EnSafetyIsland  : `GEN_SAFETY_ISLAND,
-    EnSpatzCluster  : `GEN_SPATZ_CLUSTER,
-    EnOpenTitan     : `GEN_OPEN_TITAN,
-    EnCan           : 0,
-    EnEthernet      : 0,
-    default         : '1
-  };
 
   ///////////////////
   // GPIOs         // 
@@ -164,13 +136,12 @@ module carfield_top_xilinx
   // Tie off signals if no switches on the board
 `ifndef USE_SWITCHES
   logic         testmode_i;
-  logic [1:0]   boot_mode_i, boot_mode_safety_i;
+  logic [1:0]   boot_mode_i;
   assign testmode_i  = '0;
   assign boot_mode_i = 2'b00;
-  assign boot_mode_safety_i = 2'b00;
 `endif
 
-  // Give VDD and GND to JTAG
+  // Give VDD and GND to JTAG dongle
 `ifdef USE_JTAG_VDDGND
   assign jtag_vdd_o  = '1;
   assign jtag_gnd_o  = '0;
@@ -180,6 +151,46 @@ module carfield_top_xilinx
   assign jtag_trst_ni = '1;
 `endif
 
+  //////////////////
+  // Clock Wizard //
+  //////////////////
+
+  wire sys_clk;
+
+  // Get from the diff board pins a single ended buffered clock that
+  // can be sent to clk_wiz and DDR separately (without cascading MMCMs)
+  // As sys_clk frequency depends on the boards /!\ in IPs configurations
+  IBUFDS #
+  (
+    .IBUF_LOW_PWR ("FALSE")
+  )
+  u_ibufg_sys_clk
+  (
+    .I  (sys_clk_p),
+    .IB (sys_clk_n),
+    .O  (sys_clk)
+  );
+
+  xlnx_clk_wiz i_xlnx_clk_wiz (
+    .clk_in1 ( sys_clk  ),
+    .reset   ( '0       ),
+    .clk_100 (          ),
+    .clk_50  (          ),
+    .clk_20  ( soc_clk  ),
+    .clk_10  (          )
+  );
+
+  /////////////////////
+  // Reset Generator //
+  /////////////////////
+
+  rstgen i_rstgen_main (
+    .clk_i        ( soc_clk                  ),
+    .rst_ni       ( ~sys_rst                 ),
+    .test_mode_i  ( testmode_i              ),
+    .rst_no       ( rst_n                    ),
+    .init_no      (                          ) // keep open
+  );
 
   ///////////////////
   // VIOs          //
@@ -205,63 +216,6 @@ module carfield_top_xilinx
   assign boot_mode = boot_mode_i;
   assign boot_mode_safety = boot_mode_safety_i;
 `endif
-
-
-  //////////////////
-  // Clock Wizard // 
-  //////////////////
-
-  xlnx_clk_wiz i_xlnx_clk_wiz (
-    .clk_in1_p,
-    .clk_in1_n,
-    .clk_100( dram_clk ),
-    .clk_50 (          ),
-    .clk_20 ( soc_clk  ),
-    .clk_10 (          )
-  );
-
-  /////////////////////
-  // Reset Generator //
-  /////////////////////
-
-  rstgen i_rstgen_main (
-    .clk_i        ( soc_clk                  ),
-    .rst_ni       ( ~sys_rst                 ),
-    .test_mode_i  ( 0                        ),
-    .rst_no       ( rst_n                    ),
-    .init_no      (                          ) // keep open
-  );
-
-
-  //////////////////
-  // DRAM WRAPPER //
-  //////////////////
-
-`ifdef USE_DDR
-  dram_wrapper #(
-    .axi_soc_aw_chan_t ( carfield_axi_llc_aw_chan_t ),
-    .axi_soc_w_chan_t  ( carfield_axi_llc_w_chan_t  ),
-    .axi_soc_b_chan_t  ( carfield_axi_llc_b_chan_t  ),
-    .axi_soc_ar_chan_t ( carfield_axi_llc_ar_chan_t ),
-    .axi_soc_r_chan_t  ( carfield_axi_llc_r_chan_t  ),
-    .axi_soc_req_t     ( carfield_axi_llc_req_t     ),
-    .axi_soc_resp_t    ( carfield_axi_llc_rsp_t     )
-  ) i_dram_wrapper (
-    // Rst
-    .sys_rst_i                  ( sys_rst   ),
-    .soc_resetn_i               ( rst_n     ),
-    .soc_clk_i                  ( soc_clk   ),
-    // Sys clk
-    .dram_clk_i                 ( dram_clk  ),
-    // Axi
-    .soc_req_i                  ( axi_llc_mst_req  ),
-    .soc_rsp_o                  ( axi_llc_mst_rsp  ),
-    // Phy
-    .*
-  );
-
-`endif
-
 
   //////////////////
   // I2C Adaption //
@@ -406,7 +360,7 @@ logic [SpihNumCs-1:0] qspi_cs_b_ts;
   /////////////////////////
 
   logic rtc_clk_d, rtc_clk_q;
-  logic [16:0] counter_d, counter_q;
+  logic [15:0] counter_d, counter_q;
 
   // Divide soc_clk (20 MHz) by 610 ~= 32768 Hz RTC Clock
   always_comb begin
@@ -443,6 +397,36 @@ logic [SpihNumCs-1:0] qspi_cs_b_ts;
   );
 `endif
 
+  //////////////////
+  // Carfield Cfg //
+  //////////////////
+
+`ifndef GEN_PULP_CLUSTER
+`define GEN_PULP_CLUSTER 0
+`endif
+`ifndef GEN_SAFETY_ISLAND
+`define GEN_SAFETY_ISLAND 0
+`endif
+`ifndef GEN_SPATZ_CLUSTER
+`define GEN_SPATZ_CLUSTER 0
+`endif
+`ifndef GEN_OPEN_TITAN
+`define GEN_OPEN_TITAN 0
+`endif
+
+  localparam cheshire_cfg_t Cfg = carfield_pkg::CarfieldCfgDefault;
+  `CHESHIRE_TYPEDEF_ALL(carfield_, Cfg)
+
+  localparam islands_cfg_t IslandsCfg = '{
+    EnPulpCluster   : `GEN_PULP_CLUSTER,
+    EnSafetyIsland  : `GEN_SAFETY_ISLAND,
+    EnSpatzCluster  : `GEN_SPATZ_CLUSTER,
+    EnOpenTitan     : `GEN_OPEN_TITAN,
+    EnCan           : 0,
+    EnEthernet      : 0,
+    default         : '1
+  };
+
   ///////////////////
   // LLC interface //
   ///////////////////
@@ -478,7 +462,7 @@ logic [SpihNumCs-1:0] qspi_cs_b_ts;
   axi_cdc_dst      #(
   .LogDepth     ( LogDepth                   ),
   .axi_req_t    ( carfield_axi_llc_req_t     ),
-  .axi_rsp_t    ( carfield_axi_llc_rsp_t     ),
+  .axi_resp_t   ( carfield_axi_llc_rsp_t     ),
   .w_chan_t     ( carfield_axi_llc_w_chan_t  ),
   .b_chan_t     ( carfield_axi_llc_b_chan_t  ),
   .ar_chan_t    ( carfield_axi_llc_ar_chan_t ),
@@ -514,7 +498,6 @@ logic [SpihNumCs-1:0] qspi_cs_b_ts;
 
   logic jtag_host_to_safety, jtag_safety_to_ot;
 
-`ifdef IMPOSSIBLEDEF
   carfield #(
       .Cfg       (carfield_pkg::CarfieldCfgDefault),
       .IslandsCfg(IslandsCfg),
@@ -596,7 +579,7 @@ logic [SpihNumCs-1:0] qspi_cs_b_ts;
       .slink_rcv_clk_i           (),
       .slink_rcv_clk_o           (),
       .slink_i                   (),
-      .slink_o                   ()
+      .slink_o                   (),
 
       // LLC Interface
       .llc_ar_data,
@@ -613,7 +596,7 @@ logic [SpihNumCs-1:0] qspi_cs_b_ts;
       .llc_r_rptr,
       .llc_w_data,
       .llc_w_wptr,
-      .llc_w_rptr,
+      .llc_w_rptr
       //.hyper_cs_n_wire,
       //.hyper_ck_wire,
       //.hyper_ck_n_wire,
@@ -625,6 +608,34 @@ logic [SpihNumCs-1:0] qspi_cs_b_ts;
       //.hyper_dq_oe,
       //.hyper_reset_n_wire
   );
+
+  //////////////////
+  // DRAM WRAPPER //
+  //////////////////
+
+`ifdef USE_DDR
+  dram_wrapper #(
+    .axi_soc_aw_chan_t ( carfield_axi_llc_aw_chan_t ),
+    .axi_soc_w_chan_t  ( carfield_axi_llc_w_chan_t  ),
+    .axi_soc_b_chan_t  ( carfield_axi_llc_b_chan_t  ),
+    .axi_soc_ar_chan_t ( carfield_axi_llc_ar_chan_t ),
+    .axi_soc_r_chan_t  ( carfield_axi_llc_r_chan_t  ),
+    .axi_soc_req_t     ( carfield_axi_llc_req_t     ),
+    .axi_soc_resp_t    ( carfield_axi_llc_rsp_t     )
+  ) i_dram_wrapper (
+    // Rst
+    .sys_rst_i                  ( sys_rst   ),
+    .soc_resetn_i               ( rst_n     ),
+    .soc_clk_i                  ( soc_clk   ),
+    // Sys clk
+    .dram_clk_i                 ( sys_clk   ),
+    // Axi
+    .soc_req_i                  ( llc_req  ),
+    .soc_rsp_o                  ( llc_rsp  ),
+    // Phy
+    .*
+  );
+
 `endif
 
 endmodule

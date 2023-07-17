@@ -6,6 +6,11 @@
 set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets -of [get_ports jtag_tck_i]]
 set_property CLOCK_BUFFER_TYPE NONE [get_nets -of [get_ports jtag_tck_i]]
 
+# Remove clk_mux from clk tree
+set all_in_mux [get_nets -of [ get_pins -filter { DIRECTION == IN } -of [get_cells -hier -filter { ORIG_REF_NAME == tc_clk_mux2 || REF_NAME == tc_clk_mux2 }]]]
+set_property CLOCK_DEDICATED_ROUTE FALSE $all_in_mux
+set_property CLOCK_BUFFER_TYPE NONE $all_in_mux
+
 #################################################################################
 
 ###############
@@ -1764,12 +1769,12 @@ set_property IOSTANDARD LVCMOS18 [get_ports jtag_tdi_i]
 #set_property PACKAGE_PIN C7       [get_ports "No Connect"] ;# Bank 235 - MGTYTXP2_235
 #set_property PACKAGE_PIN A6       [get_ports "No Connect"] ;# Bank 235 - MGTYTXP3_235
 
-#set_property BOARD_PART_PIN default_100mhz_clk_n [get_ports c0_sys_clk_n]
-#set_property IOSTANDARD DIFF_SSTL12 [get_ports c0_sys_clk_n]
-#set_property BOARD_PART_PIN default_100mhz_clk_p [get_ports c0_sys_clk_p]
-#set_property IOSTANDARD DIFF_SSTL12 [get_ports c0_sys_clk_p]
-#set_property PACKAGE_PIN BH51 [get_ports c0_sys_clk_p]
-#set_property PACKAGE_PIN BJ51 [get_ports c0_sys_clk_n]
+set_property BOARD_PART_PIN default_100mhz_clk_n [get_ports sys_clk_n]
+set_property IOSTANDARD DIFF_SSTL12 [get_ports sys_clk_n]
+set_property BOARD_PART_PIN default_100mhz_clk_p [get_ports sys_clk_p]
+set_property IOSTANDARD DIFF_SSTL12 [get_ports sys_clk_p]
+set_property PACKAGE_PIN BH51 [get_ports sys_clk_p]
+set_property PACKAGE_PIN BJ51 [get_ports sys_clk_n]
 
 #set_property C_CLK_INPUT_FREQ_HZ 300000000 [get_debug_cores dbg_hub]
 #set_property C_ENABLE_CLK_DIVIDER false [get_debug_cores dbg_hub]

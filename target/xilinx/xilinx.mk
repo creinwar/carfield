@@ -15,7 +15,7 @@ ip-dir       := $(CAR_XIL_DIR)/xilinx
 ifeq ($(BOARD),vcu128)
 	XILINX_PART  ?= xcvu37p-fsvh2892-2L-e
 	XILINX_BOARD ?= xilinx.com:vcu128:part0:1.0
-	ips-names    := xlnx_clk_wiz xlnx_vio
+	ips-names    := xlnx_mig_ddr4 xlnx_clk_wiz xlnx_vio
 	FPGA_PATH    ?= xilinx_tcf/Xilinx/091847100638A
 endif
 ifeq ($(BOARD),genesys2)
@@ -49,7 +49,9 @@ VIVADOENV ?=  PROJECT=$(PROJECT)            \
               PORT=$(XILINX_PORT)           \
               HOST=$(XILINX_HOST)           \
               FPGA_PATH=$(FPGA_PATH)        \
-              BIT=$(bit)
+              BIT=$(bit)                    \
+			  IPS="$(foreach ip-name,$(ips-names),xilinx/$(ip-name)/$(ip-name).srcs/sources_1/ip/$(ip-name)/$(ip-name).xci)"
+
 MODE        ?= gui
 VIVADOFLAGS ?= -nojournal -mode $(MODE)
 

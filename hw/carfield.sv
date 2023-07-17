@@ -143,19 +143,19 @@ module carfield
   // LLC interface
   output logic [LlcArWidth-1:0] llc_ar_data,
   output logic [    LogDepth:0] llc_ar_wptr,
-  output logic [    LogDepth:0] llc_ar_rptr,
+  input  logic [    LogDepth:0] llc_ar_rptr,
   output logic [LlcAwWidth-1:0] llc_aw_data,
   output logic [    LogDepth:0] llc_aw_wptr,
-  output logic [    LogDepth:0] llc_aw_rptr,
+  input  logic [    LogDepth:0] llc_aw_rptr,
   input  logic [ LlcBWidth-1:0] llc_b_data,
   input  logic [    LogDepth:0] llc_b_wptr,
-  input  logic [    LogDepth:0] llc_b_rptr,
+  output logic [    LogDepth:0] llc_b_rptr,
   input  logic [ LlcRWidth-1:0] llc_r_data,
   input  logic [    LogDepth:0] llc_r_wptr,
-  input  logic [    LogDepth:0] llc_r_rptr,
+  output logic [    LogDepth:0] llc_r_rptr,
   output logic [ LlcWWidth-1:0] llc_w_data,
   output logic [    LogDepth:0] llc_w_wptr,
-  output logic [    LogDepth:0] llc_w_rptr,
+  input  logic [    LogDepth:0] llc_w_rptr,
 `endif // NO_HYPERBUS
   // External reg interface slaves (async)
   // Currently for PLL and Padframe

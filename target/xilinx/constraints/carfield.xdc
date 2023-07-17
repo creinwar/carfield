@@ -2,8 +2,7 @@
 # Solderpad Hardware License, Version 0.51, see LICENSE for details.
 # SPDX-License-Identifier: SHL-0.51
 #
-# Nicole Narr <narrn@student.ethz.ch>
-# Christopher Reinwardt <creinwar@student.ethz.ch>
+# Cyril Koenig <cykoenig@iis.ee.ethz.ch>
 
 ###################
 # Global Settings #
@@ -12,21 +11,12 @@
 # Preserve the output mux of the clock divider
 set_property DONT_TOUCH TRUE [get_cells i_sys_clk_div/i_clk_bypass_mux]
 
-# The net of which we get the 200 MHz single ended clock from the MIG
-set MIG_CLK_SRC [get_pins -filter {DIRECTION == OUT} -leaf -of_objects [get_nets dram_clock_out]]
-set MIG_RST_SRC [get_pins -filter {DIRECTION == OUT} -leaf -of_objects [get_nets dram_sync_reset]]
-
+# Synchronous reset
 set SOC_RST_SRC [get_pins -filter {DIRECTION == OUT} -leaf -of_objects [get_nets rst_n]]
 
 #####################
 # Timing Parameters #
 #####################
-
-# 333 MHz (max) DRAM Axi clock
-set FPGA_TCK 3.0
-
-# 200 MHz DRAM Generated clock
-set DRAM_TCK 5.0
 
 # 20 MHz SoC clock
 set SOC_TCK 50.0
@@ -44,8 +34,15 @@ set UART_IO_SPEED 200.0
 # Clocks #
 ##########
 
+# Clk_wiz clocks
+create_clock -period 100 -name clk_10 [get_pins i_xlnx_clk_wiz/clk_10]
+create_clock -period 50 -name clk_20 [get_pins i_xlnx_clk_wiz/clk_20]
+create_clock -period 20 -name clk_50 [get_pins i_xlnx_clk_wiz/clk_50]
+create_clock -period 10 -name clk_100 [get_pins i_xlnx_clk_wiz/clk_100]
+
 # System Clock
-# create_generated_clock -name clk_soc -source $MIG_CLK_SRC -divide_by 4 [get_nets soc_clk]
+# [see in board.xdc]
+
 # JTAG Clock
 create_clock -period $JTAG_TCK -name clk_jtag [get_ports jtag_tck_i]
 set_input_jitter clk_jtag 1.000
@@ -55,14 +52,7 @@ set_input_jitter clk_jtag 1.000
 ################
 
 # JTAG Clock is asynchronous to all other clocks
-set_clock_groups -name jtag_async -asynchronous -group [get_clocks clk_jtag]
-
-#######################
-# Placement Overrides #
-#######################
-
-# Accept suboptimal BUFG-BUFG cascades
-set_property CLOCK_DEDICATED_ROUTE ANY_CMT_COLUMN [get_nets i_sys_clk_div/i_clk_mux/clk0_i]
+set_clock_groups -name jtag_async -asynchronous -group {clk_jtag}
 
 ########
 # JTAG #
@@ -76,13 +66,6 @@ set_output_delay -max -clock clk_jtag [expr 0.20 * $JTAG_TCK] [get_ports jtag_td
 
 set_max_delay  -from [get_ports jtag_trst_ni] $JTAG_TCK
 set_false_path -hold -from [get_ports jtag_trst_ni]
-
-#######
-# MIG #
-#######
-
-set_max_delay  -from $MIG_RST_SRC $FPGA_TCK
-set_false_path -hold -from $MIG_RST_SRC
 
 ########
 # UART #

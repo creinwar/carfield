@@ -19,6 +19,7 @@ if {$::env(BOARD) eq "vcu128"} {
   set_property -dict [list CONFIG.C0.DDR4_Clamshell {true} \
                            CONFIG.C0_DDR4_BOARD_INTERFACE {ddr4_sdram} \
                            CONFIG.System_Clock {No_Buffer} \
+                           CONFIG.Reference_Clock {No_Buffer} \
                            CONFIG.C0.DDR4_InputClockPeriod {10000} \
                            CONFIG.C0.DDR4_CLKOUT0_DIVIDE {3} \
                            CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-075E} \
@@ -32,22 +33,6 @@ if {$::env(BOARD) eq "vcu128"} {
                            CONFIG.C0.CS_WIDTH {2} \
                            CONFIG.C0.DDR4_AxiSelection {true} \
                       ] [get_ips $ipName]
-} elseif {$::env(BOARD) eq "zcu102"} {
-  set_property -dict [list CONFIG.RESET_BOARD_INTERFACE {reset} \
-                           CONFIG.C0_CLOCK_BOARD_INTERFACE {user_si570_sysclk} \
-                           CONFIG.C0_DDR4_BOARD_INTERFACE {ddr4_sdram_062} \
-                           CONFIG.C0.DDR4_TimePeriod {833} \
-                           CONFIG.C0.DDR4_InputClockPeriod {3332} \
-                           CONFIG.C0.DDR4_CLKOUT0_DIVIDE {5} \
-                           CONFIG.C0.DDR4_MemoryPart {MT40A256M16LY-062E} \
-                           CONFIG.C0.DDR4_DataWidth {16} \
-                           CONFIG.C0.DDR4_CasWriteLatency {12} \
-                           CONFIG.C0.DDR4_AxiDataWidth {128} \
-                           CONFIG.C0.DDR4_AxiAddressWidth {29} \
-                           CONFIG.ADDN_UI_CLKOUT1_FREQ_HZ {100} \
-                           CONFIG.C0.BANK_GROUP_WIDTH {1} \
-                           CONFIG.C0.DDR4_AxiSelection {true} \
-                     ] [get_ips $ipName]
 }
 
 generate_target {instantiation_template} [get_files ./$ipName.srcs/sources_1/ip/$ipName/$ipName.xci]
