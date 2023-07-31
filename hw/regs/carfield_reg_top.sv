@@ -198,8 +198,8 @@ module carfield_reg_top #(
   logic pulp_cluster_fetch_enable_qs;
   logic pulp_cluster_fetch_enable_wd;
   logic pulp_cluster_fetch_enable_we;
-  logic spatz_cluster_fetch_enable_qs;
-  logic spatz_cluster_fetch_enable_wd;
+  logic [1:0] spatz_cluster_fetch_enable_qs;
+  logic [1:0] spatz_cluster_fetch_enable_wd;
   logic spatz_cluster_fetch_enable_we;
   logic [31:0] host_boot_addr_qs;
   logic [31:0] host_boot_addr_wd;
@@ -1479,9 +1479,9 @@ module carfield_reg_top #(
   // R[spatz_cluster_fetch_enable]: V(False)
 
   prim_subreg #(
-    .DW      (1),
+    .DW      (2),
     .SWACCESS("RW"),
-    .RESVAL  (1'h0)
+    .RESVAL  (2'h0)
   ) u_spatz_cluster_fetch_enable (
     .clk_i   (clk_i    ),
     .rst_ni  (rst_ni  ),
@@ -2114,7 +2114,7 @@ module carfield_reg_top #(
   assign pulp_cluster_fetch_enable_wd = reg_wdata[0];
 
   assign spatz_cluster_fetch_enable_we = addr_hit[50] & reg_we & !reg_error;
-  assign spatz_cluster_fetch_enable_wd = reg_wdata[0];
+  assign spatz_cluster_fetch_enable_wd = reg_wdata[1:0];
 
   assign host_boot_addr_we = addr_hit[51] & reg_we & !reg_error;
   assign host_boot_addr_wd = reg_wdata[31:0];
@@ -2351,7 +2351,7 @@ module carfield_reg_top #(
       end
 
       addr_hit[50]: begin
-        reg_rdata_next[0] = spatz_cluster_fetch_enable_qs;
+        reg_rdata_next[1:0] = spatz_cluster_fetch_enable_qs;
       end
 
       addr_hit[51]: begin

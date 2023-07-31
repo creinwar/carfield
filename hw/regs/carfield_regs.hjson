@@ -569,7 +569,7 @@
       resval: "0",
       hwqe: "0",
       fields: [
-        { bits: "0:0" }
+        { bits: "1:0" }
       ],
     }
 
