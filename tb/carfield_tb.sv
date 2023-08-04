@@ -15,6 +15,8 @@
 module tb_carfield_soc;
 
   import uvm_pkg::*;
+  import carfield_pkg::*;
+  import cheshire_pkg::*;
 
   carfield_soc_fixture fix();
 
@@ -34,6 +36,18 @@ module tb_carfield_soc;
 
   // security island
   string      secd_preload_elf;
+
+  //FP Spatz Cluster
+  localparam CAR_PERIPHS_BASE_ADDR = 32'h20000000;
+  localparam CAR_SOC_CTRL_OFFSET   = 32'h10000;
+  localparam CARFIELD_SPATZ_CLUSTER_FETCH_ENABLE_REG_OFFSET = 32'hC8;
+  string      spatz_preload_elf;
+  logic       spatz_boot_mode;
+  bit  [31:0] spatz_exit_code;
+  bit         spatz_exit_status;
+  doub_bt     spatz_binary_entry;
+  doub_bt     spatz_reg_value;
+  carfield_pkg::reg_start_t carfield_reg_start;
 
   logic [63:0] unused;
 
@@ -155,6 +169,43 @@ module tb_carfield_soc;
   // TODO
 
   // spatz cluster standalone
-  // TODO
+  initial begin
+    // Fetch plusargs or use safe (fail-fast) defaults
+    if (!$value$plusargs("SPATZCL_BOOTMODE=%d",     spatz_boot_mode))   spatz_boot_mode   = 0;
+    if (!$value$plusargs("SPATZCL_BINARY=%s",       spatz_preload_elf)) spatz_preload_elf = "";
+
+    if (spatz_preload_elf != "") begin
+      case (spatz_boot_mode)
+        0: begin
+          //JTAG
+          $display("[JTAG SPATZ] Init ");
+          fix.chs_vip.jtag_init();
+          $display("[JTAG SPATZ] Halt the core and load the binary to L2 ");
+          fix.chs_vip.jtag_elf_halt_load(spatz_preload_elf, spatz_binary_entry );
+          // write start address into the csr
+          $display("[JTAG SPATZ] write the CSR %x of spatz with the entry point %x", spatz_cluster_pkg::PeriStartAddr + spatz_cluster_peripheral_reg_pkg::SPATZ_CLUSTER_PERIPHERAL_CLUSTER_BOOT_CONTROL_OFFSET, spatz_binary_entry);
+          fix.chs_vip.jtag_write_reg(spatz_cluster_pkg::PeriStartAddr + spatz_cluster_peripheral_reg_pkg::SPATZ_CLUSTER_PERIPHERAL_CLUSTER_BOOT_CONTROL_OFFSET, spatz_binary_entry );
+          // write fetch enable register
+          spatz_reg_value = {32'h00000000,32'h00000003};
+          $display("[JTAG SPATZ] Write the fetch enable register %x with %x", CAR_PERIPHS_BASE_ADDR + CAR_SOC_CTRL_OFFSET + CARFIELD_SPATZ_CLUSTER_FETCH_ENABLE_REG_OFFSET ,spatz_reg_value);
+          fix.chs_vip.jtag_write_reg(CAR_PERIPHS_BASE_ADDR + CAR_SOC_CTRL_OFFSET + CARFIELD_SPATZ_CLUSTER_FETCH_ENABLE_REG_OFFSET, spatz_reg_value);
+          spatz_reg_value = 64'h0000000000000000;
+          //the test shouldd write 70 if ever
+          do begin
+            fix.chs_vip.jtag_read_reg(32'h0x78100000, spatz_reg_value);
+          end while (spatz_reg_value!='h5);
+          $display("Spatz EOC 32'h0x78100000 value is: %x", spatz_reg_value);
+        end
+
+        1: begin
+          //Serial Link
+
+        end default: begin
+          $fatal(1, "Unsupported boot mode %d (reserved)!", spatz_boot_mode);
+        end
+      endcase
+      $finish;
+    end
+  end
 
 endmodule

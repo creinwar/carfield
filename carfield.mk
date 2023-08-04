@@ -17,7 +17,7 @@ BENDER   ?= bender
 QUESTA   ?= questa-2022.3
 VIVADO   ?= vitis-2020.2 vivado
 TBENCH   ?= tb_carfield_soc
-VOPTARGS ?=
+VOPTARGS ?= +acc
 
 # Interrupt configuration in cheshire
 # CLINT interruptible harts
@@ -37,7 +37,7 @@ CHS_ROOT ?= $(shell $(BENDER) path cheshire)
 
 CHS_BOOTMODE ?= 0 # default passive bootmode
 CHS_PRELMODE ?= 1 # default serial link preload
-CHS_BINARY   ?= 
+CHS_BINARY   ?=
 CHS_IMAGE    ?=
 
 # Safety Island
@@ -127,7 +127,7 @@ $(CAR_SW_DIR)/include/regs/soc_ctrl.h: $(CAR_ROOT)/hw/regs/carfield_regs.hjson |
 ## hw/regs/carfield_regs.csv. You don't have to run this target unless you changed the CSV file. The
 ## checked-in pregenerated register file RTL should be up-to-date. If you regenerate the regfile, do
 ## not forget to check in the generated RTL.
-regenerate_soc_regs: $(CAR_ROOT)/hw/regs/carfield_reg_pkg.sv $(CAR_ROOT)/hw/regs/carfield_reg_top.sv $(CAR_SW_DIR)/include/regs/soc_ctrl.h 
+regenerate_soc_regs: $(CAR_ROOT)/hw/regs/carfield_reg_pkg.sv $(CAR_ROOT)/hw/regs/carfield_reg_top.sv $(CAR_SW_DIR)/include/regs/soc_ctrl.h
 
 ## @section Carfield CLINT and PLIC interruptible harts configuration
 
