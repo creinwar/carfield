@@ -7,8 +7,8 @@
 # Contraints files selection
 switch $::env(BOARD) {
   "genesys2" - "kc705" - "vc707" - "vcu128" - "zcu102" {
-    import_files -fileset constrs_1 -norecurse constraints/$::env(PROJECT).xdc
     import_files -fileset constrs_1 -norecurse constraints/$::env(BOARD).xdc
+    import_files -fileset constrs_1 -norecurse constraints/$::env(PROJECT).xdc
   }
   default {
       exit 1
@@ -16,26 +16,7 @@ switch $::env(BOARD) {
 }
 
 # Ips selection
-switch $::env(BOARD) {
-  "genesys2" - "kc705" - "vc707" {
-    set ips { "xilinx/xlnx_mig_7_ddr3/xlnx_mig_7_ddr3.srcs/sources_1/ip/xlnx_mig_7_ddr3/xlnx_mig_7_ddr3.xci" \
-              "xilinx/xlnx_clk_wiz/xlnx_clk_wiz.srcs/sources_1/ip/xlnx_clk_wiz/xlnx_clk_wiz.xci" \
-              "xilinx/xlnx_vio/xlnx_vio.srcs/sources_1/ip/xlnx_vio/xlnx_vio.xci" }
-  }
-  "vcu128" {
-    set ips { "xilinx/xlnx_clk_wiz/xlnx_clk_wiz.srcs/sources_1/ip/xlnx_clk_wiz/xlnx_clk_wiz.xci" \
-              "xilinx/xlnx_vio/xlnx_vio.srcs/sources_1/ip/xlnx_vio/xlnx_vio.xci" }
-  }
-  "zcu102" {
-    set ips { "xilinx/xlnx_mig_ddr4/xlnx_mig_ddr4.srcs/sources_1/ip/xlnx_mig_ddr4/xlnx_mig_ddr4.xci" \
-              "xilinx/xlnx_clk_wiz/xlnx_clk_wiz.srcs/sources_1/ip/xlnx_clk_wiz/xlnx_clk_wiz.xci" \
-              "xilinx/xlnx_vio/xlnx_vio.srcs/sources_1/ip/xlnx_vio/xlnx_vio.xci" }
-  }
-  default {
-    set ips {}
-  }
-}
-
+set ips $::env(IP_PATHS)
 read_ip $ips
 
 source scripts/add_sources.tcl
@@ -44,7 +25,9 @@ set_property top ${project}_top_xilinx [current_fileset]
 
 update_compile_order -fileset sources_1
 
-# Runtime optimized due to the low frequency (20MHz)
+# set_property strategy Flow_AlternateRoutability [get_runs synth_1]
+# set_property strategy Congestion_SpreadLogic_high [get_runs impl_1]
+
 set_property strategy Flow_RuntimeOptimized [get_runs synth_1]
 set_property strategy Flow_RuntimeOptimized [get_runs impl_1]
 
@@ -70,6 +53,9 @@ report_timing -nworst 1 -delay_type max -sort_by group                  -file re
 report_utilization -hierarchical                                        -file reports/$project.utilization.rpt
 report_cdc                                                              -file reports/$project.cdc.rpt
 report_clock_interaction                                                -file reports/$project.clock_interaction.rpt
+
+# Remove black-boxed unreads
+remove_cell [get_cells -hier -filter {ORIG_REF_NAME == "unread" || REF_NAME == "unread"}]
 
 # Instantiate ILA
 set DEBUG [llength [get_nets -hier -filter {MARK_DEBUG == 1}]]
@@ -133,9 +119,11 @@ if {[info exists ::env(CHECK_TIMING)] && $::env(CHECK_TIMING)==1} {
 }
 
 # Output Verilog netlist + SDC for timing simulation
-write_verilog -force -mode funcsim out/${project}_funcsim.v
-write_verilog -force -mode timesim out/${project}_timesim.v
-write_sdf     -force out/${project}_timesim.sdf
+if {[info exists ::env(EXPORT_SDF)] && $::env(EXPORT_SDF)==1} {
+  write_verilog -force -mode funcsim out/${project}_funcsim.v
+  write_verilog -force -mode timesim out/${project}_timesim.v
+  write_sdf     -force out/${project}_timesim.sdf
+}
 
 # Reports
 exec mkdir -p reports/

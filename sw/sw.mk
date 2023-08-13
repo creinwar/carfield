@@ -20,7 +20,7 @@ car-sw-all: car-sw-libs car-sw-tests
 .PHONY: car-sw-all car-sw-libs car-sw-headers car-sw-tests
 
 # Libraries
-CAR_PULPD_BARE ?= $(CAR_SW_DIR)/tests/bare-metal/pulpd
+CAR_PULPD_BARE    ?= $(CAR_SW_DIR)/tests/bare-metal/pulpd
 CAR_SW_INCLUDES    = -I$(CAR_SW_DIR)/include -I$(CAR_SW_DIR)/tests/bare-metal/safed -I$(CAR_PULPD_BARE) -I$(CHS_SW_DIR)/include $(CHS_SW_DEPS_INCS)
 CAR_SW_LIB_SRCS_S  = $(wildcard $(CAR_SW_DIR)/lib/*.S $(CAR_SW_DIR)/lib/**/*.S)
 CAR_SW_LIB_SRCS_C  = $(wildcard $(CAR_SW_DIR)/lib/*.c $(CAR_SW_DIR)/lib/**/*.c)
@@ -124,3 +124,22 @@ mibench-automotive-basicmath: automotive-basicmath
 mibench-automotive-bitcount: automotive-bitcount
 mibench-automotive-qsort: automotive-qsort
 mibench-automotive-susan: automotive-susan
+
+###################
+# GPT Linux image #
+###################
+
+# Create full Linux disk image
+$(CAR_SW_DIR)/boot/linux.gpt.bin: $(CHS_SW_DIR)/boot/zsl.rom.bin $(CAR_SW_DIR)/boot/carfield.dtb $(CAR_SW_DIR)/boot/install64/fw_payload.bin $(CAR_SW_DIR)/boot/install64/uImage
+	truncate -s $(CHS_SW_DISK_SIZE) $@
+	sgdisk --clear -g --set-alignment=1 \
+		--new=1:64:96 --typecode=1:$(CHS_SW_ZSL_TGUID) \
+		--new=2:128:159 --typecode=2:$(CHS_SW_DTB_TGUID) \
+		--new=3:2048:8191 --typecode=3:$(CHS_SW_FW_TGUID) \
+		--new=4:8192:24575 --typecode=4:8300 \
+		--new=5:24576:0 --typecode=5:8200 \
+		$@
+	dd if=$(word 1,$^) of=$@ bs=512 seek=64 conv=notrunc
+	dd if=$(word 2,$^) of=$@ bs=512 seek=128 conv=notrunc
+	dd if=$(word 3,$^) of=$@ bs=512 seek=2048 conv=notrunc
+	dd if=$(word 4,$^) of=$@ bs=512 seek=8192 conv=notrunc
