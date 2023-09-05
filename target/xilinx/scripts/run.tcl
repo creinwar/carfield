@@ -39,6 +39,9 @@ set_property STEPS.SYNTH_DESIGN.ARGS.RETIMING true [get_runs synth_1]
 # Enable sfcu due to package conflicts
 set_property -name {STEPS.SYNTH_DESIGN.ARGS.MORE OPTIONS} -value {-sfcu} -objects [get_runs synth_1]
 
+set_property strategy Flow_AlternateRoutability [get_runs synth_1]
+set_property strategy Congestion_SpreadLogic_high [get_runs impl_1]
+
 # Synthesis
 launch_runs synth_1
 wait_on_run synth_1
