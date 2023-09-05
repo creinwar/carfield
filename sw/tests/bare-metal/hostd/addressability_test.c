@@ -5,13 +5,10 @@
 // Alessandro Ottaviano <aottaviano@iis.ee.ethz.ch>
 //
 
-uint8_t *__base_peripherals, *__base_safety_island;
-
 #include "car_memory_map.h"
 #include "dif/clint.h"
 #include "dif/uart.h"
 #include "io.h"
-#include "car_params.h"
 #include "car_util.h"
 #include "params.h"
 #include "regs/cheshire.h"
