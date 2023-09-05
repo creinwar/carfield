@@ -24,7 +24,9 @@ switch $::env(BOARD) {
   }
   "vcu128" {
     set ips { "xilinx/xlnx_clk_wiz/xlnx_clk_wiz.srcs/sources_1/ip/xlnx_clk_wiz/xlnx_clk_wiz.xci" \
-              "xilinx/xlnx_vio/xlnx_vio.srcs/sources_1/ip/xlnx_vio/xlnx_vio.xci" }
+              "xilinx/xlnx_vio/xlnx_vio.srcs/sources_1/ip/xlnx_vio/xlnx_vio.xci" \
+              "xilinx/xilinx_rom_bank_1024x22/xilinx_rom_bank_1024x22.srcs/sources_1/ip/xilinx_rom_bank_1024x22/xilinx_rom_bank_1024x22.xci" \
+              "xilinx/xilinx_rom_bank_8192x40/xilinx_rom_bank_8192x40.srcs/sources_1/ip/xilinx_rom_bank_8192x40/xilinx_rom_bank_8192x40.xci" }
   }
   "zcu102" {
     set ips { "xilinx/xlnx_mig_ddr4/xlnx_mig_ddr4.srcs/sources_1/ip/xlnx_mig_ddr4/xlnx_mig_ddr4.xci" \

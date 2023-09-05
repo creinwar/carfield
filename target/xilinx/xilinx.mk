@@ -11,11 +11,13 @@ PROJECT      ?= carfield
 BOARD        ?= vcu128
 ip-dir       := $(CAR_XIL_DIR)/xilinx
 
+xilinx_defs  ?= TARGET_XILINX
+
 # Select board specific variables
 ifeq ($(BOARD),vcu128)
 	XILINX_PART  ?= xcvu37p-fsvh2892-2L-e
 	XILINX_BOARD ?= xilinx.com:vcu128:part0:1.0
-	ips-names    := xlnx_clk_wiz xlnx_vio
+	ips-names    := xlnx_clk_wiz xlnx_vio xilinx_rom_bank_8192x40 xilinx_rom_bank_1024x22
 endif
 ifeq ($(BOARD),genesys2)
 	XILINX_PART  ?= xc7k325tffg900-2
