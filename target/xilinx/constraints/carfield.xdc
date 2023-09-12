@@ -444,6 +444,13 @@ set_max_delay -datapath \
  -to [get_pins i_hyper_cdc_dst/i_cdc_fifo_gray_*/*i_sync/*reg*/D] \
  $SOC_TCK
 
+################
+# DEBUG Probes #
+################
+
+set_max_delay -through [get_pins -filter {NAME=~*probe*} -of_objects [get_cells u_ila_0]] $SOC_TCK
+set_false_path -hold -through [get_pins -filter {NAME=~*probe*} -of_objects [get_cells u_ila_0]]
+
 ####################
 # Reset Generators #
 ####################

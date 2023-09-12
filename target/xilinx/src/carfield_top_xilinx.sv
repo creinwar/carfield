@@ -208,7 +208,7 @@ module carfield_top_xilinx
   logic       vio_reset;
   logic [1:0] vio_boot_mode, vio_boot_mode_safety;
 
-  xlnx_vio (
+  xlnx_vio i_xlnx_vio (
     .clk(soc_clk),
     .probe_out0(vio_reset),
     .probe_out1(vio_boot_mode),

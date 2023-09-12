@@ -320,6 +320,7 @@ lint:
 #############
 
 include $(CAR_XIL_DIR)/xilinx.mk
+include $(CAR_XIL_DIR)/sim/simulate.mk
 
 ##############
 # Benchmarks #

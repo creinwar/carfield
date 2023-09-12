@@ -116,6 +116,22 @@
       compatible = "soc-ctrl,carfield";
       reg = <0x0 0x20010000 0x0 0x1000>;
     };
+    l2-intl-0@78000000 {
+      compatible = "l2-intl,carfield";
+      reg = <0x0 0x78000000 0x0 0x100000>;
+    };
+    l2-cont-0@78100000 {
+      compatible = "l2-cont,carfield";
+      reg = <0x0 0x78100000 0x0 0x100000>;
+    };
+    l2-intl-1@78200000 {
+      compatible = "l2-intl,carfield";
+      reg = <0x0 0x78200000 0x0 0x100000>;
+    };
+    l2-cont-1@78300000 {
+      compatible = "l2-cont,carfield";
+      reg = <0x0 0x78300000 0x0 0x100000>;
+    };
     safety-island@60000000 {
       compatible = "safety-island,carfield";
       reg = <0x0 0x60000000 0x0 0x800000>;
