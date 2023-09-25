@@ -16,15 +16,17 @@ if {![info exists VOPTARGS]} {
 set flags "-permissive -suppress 3009 -suppress 8386 -error 7"
 
 set pargs ""
-if {[info exists CHS_BOOTMODE]}   { append pargs "+CHS_BOOTMODE=${CHS_BOOTMODE} "     }
-if {[info exists CHS_PRELMODE]}   { append pargs "+CHS_PRELMODE=${CHS_PRELMODE} "     }
-if {[info exists CHS_BINARY]}     { append pargs "+CHS_BINARY=${CHS_BINARY} "         }
-if {[info exists SECD_BINARY]}    { append pargs "+SECD_BINARY=${SECD_BINARY} "       }
-if {[info exists SECD_BOOTMODE]}  { append pargs "+SECD_BOOTMODE=${SECD_BOOTMODE} "   }
-if {[info exists SECD_FLASH]}     { append pargs "+SECD_FLASH=${SECD_FLASH} "         }
-if {[info exists SAFED_BOOTMODE]} { append pargs "+SAFED_BOOTMODE=${SAFED_BOOTMODE} " }
-if {[info exists SAFED_BINARY]}   { append pargs "+SAFED_BINARY=${SAFED_BINARY} "     }
-if {[info exists CHS_IMAGE]}      { append pargs "+CHS_IMAGE=${CHS_IMAGE} "           }
+if {[info exists CHS_BOOTMODE]      } { append pargs "+CHS_BOOTMODE=${CHS_BOOTMODE} "         }
+if {[info exists CHS_PRELMODE]      } { append pargs "+CHS_PRELMODE=${CHS_PRELMODE} "         }
+if {[info exists CHS_BINARY]        } { append pargs "+CHS_BINARY=${CHS_BINARY} "             }
+if {[info exists SECD_BINARY]       } { append pargs "+SECD_BINARY=${SECD_BINARY} "           }
+if {[info exists SECD_BOOTMODE]     } { append pargs "+SECD_BOOTMODE=${SECD_BOOTMODE} "       }
+if {[info exists SECD_FLASH]        } { append pargs "+SECD_FLASH=${SECD_FLASH} "             }
+if {[info exists SAFED_BOOTMODE]    } { append pargs "+SAFED_BOOTMODE=${SAFED_BOOTMODE} "     }
+if {[info exists SAFED_BINARY]      } { append pargs "+SAFED_BINARY=${SAFED_BINARY} "         }
+if {[info exists CHS_IMAGE]         } { append pargs "+CHS_IMAGE=${CHS_IMAGE} "               }
+if {[info exists SPATZCL_BOOTMODE] } { append pargs "+SPATZCL_BOOTMODE=${SPATZCL_BOOTMODE} "  }
+if {[info exists SPATZCL_BINARY]   } { append pargs "+SPATZCL_BINARY=${SPATZCL_BINARY} "      }
 
 eval "vsim -c ${TESTBENCH} -t 1ps -vopt -voptargs=\"${VOPTARGS}\"" ${pargs} ${flags}
 

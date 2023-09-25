@@ -63,9 +63,11 @@ PULPD_ROOT   ?= $(shell $(BENDER) path pulp_cluster)
 PULPD_BINARY ?=
 
 # Spatz cluster
-SPATZCL_ROOT    ?= $(shell $(BENDER) path spatz)
-SPATZCL_MAKEDIR := $(SPATZCL_ROOT)/hw/system/spatz_cluster
-SPATZCL_BINARY  ?=
+SPATZCL_ROOT     ?= $(shell $(BENDER) path spatz)
+SPATZCL_MAKEDIR  := $(SPATZCL_ROOT)/hw/system/spatz_cluster
+SPATZCL_BINARY   ?=
+SPATZCL_BOOTMODE ?= 0 # default jtag bootmode
+SPATZCL_BENDER_DIR ?= $(shell which $(BENDER))
 
 # Default variable values for RTL simulation
 TBENCH         ?= tb_carfield_soc
@@ -134,7 +136,7 @@ $(CAR_SW_DIR)/include/regs/soc_ctrl.h: $(CAR_ROOT)/hw/regs/carfield_regs.hjson |
 ## hw/regs/carfield_regs.csv. You don't have to run this target unless you changed the CSV file. The
 ## checked-in pregenerated register file RTL should be up-to-date. If you regenerate the regfile, do
 ## not forget to check in the generated RTL.
-regenerate_soc_regs: $(CAR_ROOT)/hw/regs/carfield_reg_pkg.sv $(CAR_ROOT)/hw/regs/carfield_reg_top.sv $(CAR_SW_DIR)/include/regs/soc_ctrl.h 
+regenerate_soc_regs: $(CAR_ROOT)/hw/regs/carfield_reg_pkg.sv $(CAR_ROOT)/hw/regs/carfield_reg_top.sv $(CAR_SW_DIR)/include/regs/soc_ctrl.h
 
 ## @section Carfield CLINT and PLIC interruptible harts configuration
 
@@ -202,6 +204,7 @@ car-hw-sim:
 		 set SAFED_BINARY $(SAFED_BINARY); \
 		 set PULPD_BINARY $(PULPD_BINARY); \
 		 set SPATZCL_BINARY $(SPATZCL_BINARY); \
+		 set SPATZCL_BOOTMODE $(SPATZCL_BOOTMODE);\
 		 set VOPTARGS $(VOPTARGS); \
 		 set TESTBENCH $(TBENCH); \
 		 source $(CAR_ROOT)/scripts/start_carfield.tcl ; \
@@ -244,7 +247,12 @@ car-hw-init: spatz-hw-init chs-hw-init
 
 .PHONY: spatz-hw-init
 spatz-hw-init:
-	$(MAKE) -C $(SPATZCL_MAKEDIR) -B SPATZ_CLUSTER_CFG=$(CAR_HW_DIR)/cfg/spatz_carfield.hjson bootrom
+	$(MAKE) -C $(SPATZCL_MAKEDIR) -B SPATZ_CLUSTER_CFG=$(SPATZCL_MAKEDIR)/cfg/carfield.hjson bootrom
+	cp  $(SPATZCL_ROOT)/sw/snRuntime/include/spatz_cluster_peripheral.h  $(CAR_SW_DIR)/include/regs/
+
+.PHONY: spatz-sw-init
+spatz-sw-init:
+	$(MAKE) -C $(SPATZCL_MAKEDIR) BENDER=$(SPATZCL_BENDER_DIR) LLVM_INSTALL_DIR=$(LLVM_SPATZ_DIR) GCC_INSTALL_DIR=$(GCC_SPATZ_DIR) -B SPATZ_CLUSTER_CFG=$(CAR_HW_DIR)/cfg/spatz_carfield.hjson sw.vsim
 
 .PHONY: chs-hw-init
 ## This target has a prerequisite, i.e. the PLIC configuration must be chosen before generating the
