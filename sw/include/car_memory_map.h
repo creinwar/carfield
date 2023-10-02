@@ -17,6 +17,7 @@
 
 #include "regs/safety_soc_ctrl.h"
 #include "regs/soc_ctrl.h"
+#include "regs/spatz_cluster_peripheral.h"
 
 // Base addresses provided at link time
 extern void *__base_l2;

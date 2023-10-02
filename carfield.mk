@@ -67,6 +67,7 @@ SPATZCL_ROOT     ?= $(shell $(BENDER) path spatz)
 SPATZCL_MAKEDIR  := $(SPATZCL_ROOT)/hw/system/spatz_cluster
 SPATZCL_BINARY   ?=
 SPATZCL_BOOTMODE ?= 0 # default jtag bootmode
+SPATZCL_BENDER_DIR ?= $(shell which $(BENDER))
 
 # Default variable values for RTL simulation
 TBENCH         ?= tb_carfield_soc
@@ -251,7 +252,7 @@ spatz-hw-init:
 
 .PHONY: spatz-sw-init
 spatz-sw-init:
-	$(MAKE) -C $(SPATZCL_MAKEDIR) -B SPATZ_CLUSTER_CFG=$(CAR_HW_DIR)/cfg/spatz_carfield.hjson sw.vsim
+	$(MAKE) -C $(SPATZCL_MAKEDIR) BENDER=$(SPATZCL_BENDER_DIR) LLVM_INSTALL_DIR=$(LLVM_SPATZ_DIR) GCC_INSTALL_DIR=$(GCC_SPATZ_DIR) -B SPATZ_CLUSTER_CFG=$(CAR_HW_DIR)/cfg/spatz_carfield.hjson sw.vsim
 
 .PHONY: chs-hw-init
 ## This target has a prerequisite, i.e. the PLIC configuration must be chosen before generating the
