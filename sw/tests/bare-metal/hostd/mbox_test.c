@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 // Maicol Ciani <maicol.ciano@unibo.it>
+// Mattia Sinigaglia <mattia.sinigaglia5@unibo.it>
 //
 
 #include "car_memory_map.h"
@@ -21,7 +22,7 @@ static dif_rv_plic_t plic0;
 int main(int argc, char const *argv[]) {
     int mbox_id = 51;                                             // index of mbox irq in the irq vector input to the PLIC
     int prio = 0x1;
-    int a,b,c,d,e;
+    uint32_t a,b,c,d,e;
     bool t;
     unsigned global_irq_en   = 0x00001808;
     unsigned external_irq_en = 0x00000800;
@@ -32,11 +33,12 @@ int main(int argc, char const *argv[]) {
     t = dif_rv_plic_init(plic_base_addr, &plic0);
     t = dif_rv_plic_irq_set_priority(&plic0, mbox_id, prio);
     t = dif_rv_plic_irq_set_enabled(&plic0, mbox_id, 0, kDifToggleEnabled);
-    writed(0xBAADC0DE, 0x40000B80);
-    a = readd(0x40000B80);
-    if( a == 0xBAADC0DE )
-      writed(0x00000001, 0x40000B04);    // ring doorbell if mailbox is accessible
-      writed(0x00000001, 0x40000B0c);
-    wfi();
+    writed(0xBAADC0DE, MBOX_CAR_LETTER0(22));
+    a = readd(MBOX_CAR_LETTER0(22));
+    if( a == 0xBAADC0DE ){
+      writew(0x01, MBOX_CAR_INT_SND_SET(22));    // ring doorbell if mailbox is accessible
+      writew(0x01, MBOX_CAR_INT_SND_EN(22));
+      wfi();
+    }
     return 0;
 }
