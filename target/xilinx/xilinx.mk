@@ -15,19 +15,19 @@ USE_ARTIFACTS ?= 0
 
 # Select board specific variables
 ifeq ($(BOARD),vcu128)
-	XILINX_PART  ?= xcvu37p-fsvh2892-2L-e
-	XILINX_BOARD ?= xilinx.com:vcu128:part0:1.0
-	XILINX_PORT  ?= 3232
-	FPGA_PATH    ?= xilinx_tcf/Xilinx/091847100638A
-	XILINX_HOST  ?= bordcomputer
+	XILINX_PART  := xcvu37p-fsvh2892-2L-e
+	XILINX_BOARD := xilinx.com:vcu128:part0:1.0
+	XILINX_PORT  := 3232
+	FPGA_PATH    := xilinx_tcf/Xilinx/091847100638A
+	XILINX_HOST  := bordcomputer
 	ips-names    := xlnx_mig_ddr4 xlnx_clk_wiz xlnx_vio
 endif
 
 # Location of ip outputs
 ips := $(addprefix $(CAR_XIL_DIR)/,$(addsuffix .xci ,$(basename $(ips-names))))
 # Derive bender args from enabled ips
-xilinx_targs += $(foreach ip-name,$(ips-names),$(addprefix -t ,$(ip-name)))
-xilinx_targs += $(addprefix -t ,$(BOARD))
+xilinx_targs_sa := $(xilinx_targs) $(foreach ip-name,$(ips-names),$(addprefix -t ,$(ip-name)))
+xilinx_targs_sa += $(addprefix -t ,$(BOARD))
 
 # Outputs
 out := $(CAR_XIL_DIR)/out
@@ -35,7 +35,7 @@ bit := $(out)/$(PROJECT)_top_xilinx.bit
 mcs := $(out)/$(PROJECT)_top_xilinx.mcs
 
 # Vivado variables
-VIVADOENV ?=  PROJECT=$(PROJECT)            \
+VIVADOENV :=  PROJECT=$(PROJECT)            \
               BOARD=$(BOARD)                \
               XILINX_PART=$(XILINX_PART)    \
               XILINX_BOARD=$(XILINX_BOARD)  \
@@ -97,7 +97,7 @@ car-xil-rebuild-top:
 
 # Bender !! attention, the bender script is modified !!
 $(CAR_XIL_DIR)/scripts/add_sources.tcl: Bender.yml
-	$(BENDER) script vivado $(common_targs) $(xilinx_targs) $(common_defs) $(xilinx_defs) > $@
+	$(BENDER) script vivado $(common_targs) $(xilinx_targs_sa) $(common_defs) $(xilinx_defs) > $@
 	cp $@ $@.bak
 # Remove ibex's vendored prim includes as they conflict with opentitan's vendored prim includes
 	grep -v -P "lowrisc_ip/ip/prim/rtl" $@ > $@-tmp

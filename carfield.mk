@@ -102,7 +102,7 @@ endif
 ######################
 
 CAR_NONFREE_REMOTE ?= git@iis-git.ee.ethz.ch:carfield/carfield-nonfree.git
-CAR_NONFREE_COMMIT ?= e45450d8ae31127dc2b00ba70e1569c9f495387b
+CAR_NONFREE_COMMIT ?= c56b7574f2792854be5dd0f5e4d1ec8d700a863a
 
 ## Clone the non-free verification IP for the Carfield TB
 car-nonfree-init:
@@ -365,6 +365,7 @@ lint:
 # Emulation #
 #############
 
+include target/xilinx_bd/xilinx_bd.mk
 include $(CAR_XIL_DIR)/xilinx.mk
 
 ##############
