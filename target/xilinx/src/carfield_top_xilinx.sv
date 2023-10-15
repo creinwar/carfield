@@ -94,6 +94,22 @@ module carfield_top_xilinx
   `DDR3_INTF
 `endif
 
+  // Phy interfaces
+  input                 phy_tx_clk,
+  input                 phy_rx_clk,
+  input                 phy_crs,
+  input                 phy_dv,
+  input wire [3:0]      phy_rx_data,
+  input                 phy_col,
+  input                 phy_rx_er,
+  output                phy_rst_n,
+  output                phy_tx_en,
+  output wire [3:0]     phy_tx_data,
+  input                 phy_mdio_i,
+  output                phy_mdio_o,
+  output                phy_mdio_t,
+  output                phy_mdc,
+
   // Phy interface for Hyperbus
 `ifdef USE_HYPERBUS
   // Physical interace: HyperBus PADs
@@ -425,12 +441,13 @@ module carfield_top_xilinx
     default         : '1
   };
 
+  localparam axi_in_t AxiIn = gen_axi_in(Cfg);
+
   ///////////////////
   // LLC interface //
   ///////////////////
 
 `ifdef NO_HYPERBUS // bender-xilinx.mk
-  localparam axi_in_t   AxiIn   = gen_axi_in(Cfg);
   localparam int unsigned LlcIdWidth = Cfg.AxiMstIdWidth+$clog2(AxiIn.num_in)+Cfg.LlcNotBypass;
   localparam int unsigned LlcArWidth = (2**LogDepth)*axi_pkg::ar_width(Cfg.AddrWidth,LlcIdWidth,Cfg.AxiUserWidth);
   localparam int unsigned LlcAwWidth = (2**LogDepth)*axi_pkg::aw_width(Cfg.AddrWidth,LlcIdWidth,Cfg.AxiUserWidth);
@@ -490,6 +507,76 @@ module carfield_top_xilinx
 );
 `endif // NO_HYPERBUS
 
+  ////////////////////////
+  // Ethernet interface //
+  ////////////////////////
+
+`ifdef NO_ETHERNET // bender-xilinx.mk
+  localparam int unsigned AxiSlvIdWidth = Cfg.AxiMstIdWidth + $clog2(AxiIn.num_in);
+  localparam int unsigned CarfieldAxiSlvAwWidth =
+                          (2**LogDepth)*axi_pkg::aw_width(Cfg.AddrWidth, AxiSlvIdWidth, Cfg.AxiUserWidth);
+  localparam int unsigned CarfieldAxiSlvWWidth  =
+                          (2**LogDepth)*axi_pkg::w_width(Cfg.AxiDataWidth, Cfg.AxiUserWidth);
+  localparam int unsigned CarfieldAxiSlvBWidth  =
+                          (2**LogDepth)*axi_pkg::b_width(AxiSlvIdWidth, Cfg.AxiUserWidth);
+  localparam int unsigned CarfieldAxiSlvArWidth =
+                          (2**LogDepth)*axi_pkg::ar_width(Cfg.AddrWidth , AxiSlvIdWidth , Cfg.AxiUserWidth);
+  localparam int unsigned CarfieldAxiSlvRWidth  =
+                          (2**LogDepth)*axi_pkg::r_width(Cfg.AxiDataWidth, AxiSlvIdWidth, Cfg.AxiUserWidth);
+  // LLC interface
+  logic [LlcArWidth-1:0] eth_ar_data;
+  logic [    LogDepth:0] eth_ar_wptr;
+  logic [    LogDepth:0] eth_ar_rptr;
+  logic [LlcAwWidth-1:0] eth_aw_data;
+  logic [    LogDepth:0] eth_aw_wptr;
+  logic [    LogDepth:0] eth_aw_rptr;
+  logic [ LlcBWidth-1:0] eth_b_data;
+  logic [    LogDepth:0] eth_b_wptr;
+  logic [    LogDepth:0] eth_b_rptr;
+  logic [ LlcRWidth-1:0] eth_r_data;
+  logic [    LogDepth:0] eth_r_wptr;
+  logic [    LogDepth:0] eth_r_rptr;
+  logic [ LlcWWidth-1:0] eth_w_data;
+  logic [    LogDepth:0] eth_w_wptr;
+  logic [    LogDepth:0] eth_w_rptr;
+  // Axi interface
+  carfield_axi_slv_req_t eth_req;
+  carfield_axi_slv_rsp_t eth_rsp;
+
+  axi_cdc_dst      #(
+  .LogDepth     ( LogDepth                   ),
+  .axi_req_t    ( carfield_axi_slv_req_t     ),
+  .axi_resp_t   ( carfield_axi_slv_rsp_t     ),
+  .w_chan_t     ( carfield_axi_slv_w_chan_t  ),
+  .b_chan_t     ( carfield_axi_slv_b_chan_t  ),
+  .ar_chan_t    ( carfield_axi_slv_ar_chan_t ),
+  .r_chan_t     ( carfield_axi_slv_r_chan_t  ),
+  .aw_chan_t    ( carfield_axi_slv_aw_chan_t )
+  ) i_eth_cdc_dst (
+  .async_data_slave_aw_data_i ( eth_aw_data ),
+  .async_data_slave_aw_wptr_i ( eth_aw_wptr ),
+  .async_data_slave_aw_rptr_o ( eth_aw_rptr ),
+  .async_data_slave_w_data_i  ( eth_w_data  ),
+  .async_data_slave_w_wptr_i  ( eth_w_wptr  ),
+  .async_data_slave_w_rptr_o  ( eth_w_rptr  ),
+  .async_data_slave_b_data_o  ( eth_b_data  ),
+  .async_data_slave_b_wptr_o  ( eth_b_wptr  ),
+  .async_data_slave_b_rptr_i  ( eth_b_rptr  ),
+  .async_data_slave_ar_data_i ( eth_ar_data ),
+  .async_data_slave_ar_wptr_i ( eth_ar_wptr ),
+  .async_data_slave_ar_rptr_o ( eth_ar_rptr ),
+  .async_data_slave_r_data_o  ( eth_r_data  ),
+  .async_data_slave_r_wptr_o  ( eth_r_wptr  ),
+  .async_data_slave_r_rptr_i  ( eth_r_rptr  ),
+  // synchronous master port
+  .dst_clk_i                  ( soc_clk     ),
+  .dst_rst_ni                 ( rst_n       ),
+  .dst_req_o                  ( eth_req   ),
+  .dst_resp_i                 ( eth_rsp   )
+);
+`endif // NO_ETHERNET
+
+
   //////////////////
   // Carfield SoC //
   //////////////////
@@ -508,6 +595,14 @@ module carfield_top_xilinx
       .LlcBWidth    ( LlcBWidth  ),
       .LlcRWidth    ( LlcRWidth  ),
       .LlcWWidth    ( LlcWWidth  ),
+`endif
+`ifdef NO_ETHERNET
+      .AxiIdWidth   ( AxiSlvIdWidth ),
+      .AxiArWidth   ( CarfieldAxiSlvArWidth ),
+      .AxiAwWidth   ( CarfieldAxiSlvAwWidth ),
+      .AxiBWidth    ( CarfieldAxiSlvBWidth  ),
+      .AxiRWidth    ( CarfieldAxiSlvRWidth  ),
+      .AxiWWidth    ( CarfieldAxiSlvWWidth  ),
 `endif
       .HypNumPhys   (`HypNumPhys),
       .HypNumChips  (`HypNumChips)
@@ -574,7 +669,6 @@ module carfield_top_xilinx
       .gpio_o                    (),
       .gpio_en_o                 (),
 `ifdef NO_HYPERBUS
-      // LLC Interface
       .llc_ar_data,
       .llc_ar_wptr,
       .llc_ar_rptr,
@@ -591,6 +685,23 @@ module carfield_top_xilinx
       .llc_w_wptr,
       .llc_w_rptr,
 `endif
+`ifdef NO_ETHERNET
+      .eth_ar_data,
+      .eth_ar_wptr,
+      .eth_ar_rptr,
+      .eth_aw_data,
+      .eth_aw_wptr,
+      .eth_aw_rptr,
+      .eth_b_data,
+      .eth_b_wptr,
+      .eth_b_rptr,
+      .eth_r_data,
+      .eth_r_wptr,
+      .eth_r_rptr,
+      .eth_w_data,
+      .eth_w_wptr,
+      .eth_w_rptr,
+`endif // NO_ETHERNET
       // Serial link interface
       .slink_rcv_clk_i           (),
       .slink_rcv_clk_o           (),
@@ -603,7 +714,7 @@ module carfield_top_xilinx
   //////////////////
 
 `ifdef USE_DDR
-  dram_wrapper #(
+  dram_wrapper_xilinx #(
     .axi_soc_aw_chan_t ( carfield_axi_llc_aw_chan_t ),
     .axi_soc_w_chan_t  ( carfield_axi_llc_w_chan_t  ),
     .axi_soc_b_chan_t  ( carfield_axi_llc_b_chan_t  ),
@@ -624,6 +735,30 @@ module carfield_top_xilinx
     // Phy
     .*
   );
-`endif
+`endif // USE_DDR
+
+  //////////////////////
+  // ETHERNET WRAPPER //
+  //////////////////////
+
+  ethernet_wrapper_xilinx #(
+    .axi_soc_aw_chan_t ( carfield_axi_llc_aw_chan_t ),
+    .axi_soc_w_chan_t  ( carfield_axi_llc_w_chan_t  ),
+    .axi_soc_b_chan_t  ( carfield_axi_llc_b_chan_t  ),
+    .axi_soc_ar_chan_t ( carfield_axi_llc_ar_chan_t ),
+    .axi_soc_r_chan_t  ( carfield_axi_llc_r_chan_t  ),
+    .axi_soc_req_t     ( carfield_axi_llc_req_t     ),
+    .axi_soc_resp_t    ( carfield_axi_llc_rsp_t     )
+  ) i_eth_wrapper (
+    .sys_rst_i                  ( sys_rst   ),
+    .soc_resetn_i               ( rst_n     ),
+    .soc_clk_i                  ( soc_clk   ),
+    .eth_clk_i                  ( eth_clk_i ),
+    // Axi
+    .soc_req_i                  ( eth_req   ),
+    .soc_rsp_o                  ( eth_rsp   ),
+    // Phy
+    .*
+  );
 
 endmodule

@@ -32,7 +32,15 @@ module carfield
   parameter int unsigned LlcBWidth,
   parameter int unsigned LlcRWidth,
   parameter int unsigned LlcWWidth,
-`endif
+`endif // NO_HYPERBUS
+`ifdef NO_ETHERNET // bender-xilinx.mk
+  parameter int unsigned AxiIdWidth,
+  parameter int unsigned AxiArWidth,
+  parameter int unsigned AxiAwWidth,
+  parameter int unsigned AxiBWidth,
+  parameter int unsigned AxiRWidth,
+  parameter int unsigned AxiWWidth,
+`endif // NO_ETHERNET
   parameter type reg_req_t           = logic,
   parameter type reg_rsp_t           = logic
 ) (
@@ -106,6 +114,7 @@ module carfield
   output logic [ 3:0]                                 spih_ot_sd_o,
   output logic [ 3:0]                                 spih_ot_sd_en_o,
   input  logic [ 3:0]                                 spih_ot_sd_i,
+`ifndef NO_ETHERNET
   // ETHERNET interface
   input  logic                                        eth_rxck_i,
   input  logic                                        eth_rxctl_i,
@@ -118,6 +127,24 @@ module carfield
   output logic                                        eth_md_oe,
   output logic                                        eth_mdc_o,
   output logic                                        eth_rst_n_o,
+`else // NO_ETHERNET
+  // Ethernet AXI interface
+  output logic [AxiArWidth-1:0]                       eth_ar_data,
+  output logic [    LogDepth:0]                       eth_ar_wptr,
+  input  logic [    LogDepth:0]                       eth_ar_rptr,
+  output logic [AxiAwWidth-1:0]                       eth_aw_data,
+  output logic [    LogDepth:0]                       eth_aw_wptr,
+  input  logic [    LogDepth:0]                       eth_aw_rptr,
+  input  logic [ AxiBWidth-1:0]                       eth_b_data,
+  input  logic [    LogDepth:0]                       eth_b_wptr,
+  output logic [    LogDepth:0]                       eth_b_rptr,
+  input  logic [ AxiRWidth-1:0]                       eth_r_data,
+  input  logic [    LogDepth:0]                       eth_r_wptr,
+  output logic [    LogDepth:0]                       eth_r_rptr,
+  output logic [ AxiWWidth-1:0]                       eth_w_data,
+  output logic [    LogDepth:0]                       eth_w_wptr,
+  input  logic [    LogDepth:0]                       eth_w_rptr,
+`endif // NO_ETHERNET
   // CAN interface
   input  logic                                        can_rx_i,
   output logic                                        can_tx_o,
@@ -1999,6 +2026,7 @@ axi_lite_mailbox_unit #(
 );
 
 // Carfield peripherals
+`ifndef NO_ETHERNET
 // Ethernet
 // Peripheral Clock Domain
 carfield_axi_slv_req_t axi_ethernet_req;
@@ -2228,6 +2256,7 @@ axi_err_slv #(
 );
 
 end
+`endif // NO_ETHERNET
 
 // APB peripherals
 // Periph Clock Domain

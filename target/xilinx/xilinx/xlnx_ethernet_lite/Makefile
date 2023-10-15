@@ -2,8 +2,7 @@
 # Licensed under the Apache License, Version 2.0, see LICENSE for details.
 # SPDX-License-Identifier: Apache-2.0
 
-PROJECT:=xlnx_mig_ddr4
-# The files and variables on which the IP configuration depends
+PROJECT:=xlnx_ethernet_lite
 ARTIFACTS_IN:=Makefile tcl/run.tcl
 ARTIFACTS_VARS:=XILINX_PART XILINX_BOARD BOARD
 

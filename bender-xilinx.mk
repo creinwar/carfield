@@ -22,5 +22,6 @@ $(eval $(call check_enable_island,GEN_SAFETY_ISLAND))
 $(eval $(call check_enable_island,GEN_SPATZ_CLUSTER))
 $(eval $(call check_enable_island,GEN_OPEN_TITAN))
 $(eval $(call check_enable_island,NO_HYPERBUS))
+$(eval $(call check_enable_island,NO_ETHERNET))
 
 # note : bender targets are later modified in xilinx.mk
