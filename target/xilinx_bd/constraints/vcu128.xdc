@@ -1,3 +1,5 @@
+
+create_clock -period 10 -name sys_clk [get_pins design_1_i/util_ds_buf_0/IBUF_OUT]
 set_property CLOCK_DEDICATED_ROUTE BACKBONE [get_pins design_1_i/util_ds_buf_0/IBUF_OUT]
 
 #  VCU128 Rev1.0 XDC

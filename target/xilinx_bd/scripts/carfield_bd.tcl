@@ -124,13 +124,17 @@ set bCheckIPsPassed 1
 set bCheckIPs 1
 if { $bCheckIPs == 1 } {
    set list_check_ips "\ 
+xilinx.com:ip:axi_dma:7.1\
+xilinx.com:ip:axi_ethernet:7.2\
 ethz.ch:user:carfield_xilinx_ip:1.0\
 xilinx.com:ip:clk_wiz:6.0\
+xilinx.com:ip:xlconcat:2.1\
 xilinx.com:ip:ddr4:2.2\
+xilinx.com:ip:ila:6.2\
 xilinx.com:ip:xlconstant:1.1\
-xilinx.com:ip:smartconnect:1.0\
 xilinx.com:ip:util_ds_buf:2.1\
 xilinx.com:ip:vio:3.0\
+xilinx.com:ip:smartconnect:1.0\
 "
 
    set list_ips_missing ""
@@ -196,6 +200,15 @@ proc create_root_design { parentCell } {
   # Create interface ports
   set ddr4_sdram [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:ddr4_rtl:1.0 ddr4_sdram ]
 
+  set mdio_mdc [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:mdio_rtl:1.0 mdio_mdc ]
+
+  set sgmii_lvds [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:sgmii_rtl:1.0 sgmii_lvds ]
+
+  set sgmii_phyclk [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:diff_clock_rtl:1.0 sgmii_phyclk ]
+  set_property -dict [ list \
+   CONFIG.FREQ_HZ {625000000} \
+   ] $sgmii_phyclk
+
   set sys_clk [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:diff_clock_rtl:1.0 sys_clk ]
   set_property -dict [ list \
    CONFIG.FREQ_HZ {100000000} \
@@ -203,6 +216,10 @@ proc create_root_design { parentCell } {
 
 
   # Create ports
+  set dummy_port_in [ create_bd_port -dir I -type rst dummy_port_in ]
+  set_property -dict [ list \
+   CONFIG.POLARITY {ACTIVE_HIGH} \
+ ] $dummy_port_in
   set jtag_gnd_o [ create_bd_port -dir O jtag_gnd_o ]
   set jtag_tck_i [ create_bd_port -dir I jtag_tck_i ]
   set jtag_tdi_i [ create_bd_port -dir I jtag_tdi_i ]
@@ -215,6 +232,36 @@ proc create_root_design { parentCell } {
  ] $reset
   set uart_rx_i [ create_bd_port -dir I uart_rx_i ]
   set uart_tx_o [ create_bd_port -dir O uart_tx_o ]
+
+  # Create instance: axi_dma_0, and set properties
+  set axi_dma_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma:7.1 axi_dma_0 ]
+  set_property -dict [ list \
+   CONFIG.c_addr_width {64} \
+   CONFIG.c_include_mm2s_dre {1} \
+   CONFIG.c_include_s2mm_dre {1} \
+   CONFIG.c_sg_length_width {16} \
+   CONFIG.c_sg_use_stsapp_length {1} \
+ ] $axi_dma_0
+
+  # Create instance: axi_ethernet_0, and set properties
+  set axi_ethernet_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_ethernet:7.2 axi_ethernet_0 ]
+  set_property -dict [ list \
+   CONFIG.DIFFCLK_BOARD_INTERFACE {sgmii_phyclk} \
+   CONFIG.ENABLE_LVDS {true} \
+   CONFIG.ETHERNET_BOARD_INTERFACE {sgmii_lvds} \
+   CONFIG.InstantiateBitslice0 {true} \
+   CONFIG.MDIO_BOARD_INTERFACE {mdio_mdc} \
+   CONFIG.PHYADDR {0} \
+   CONFIG.PHYRST_BOARD_INTERFACE {Custom} \
+   CONFIG.PHYRST_BOARD_INTERFACE_DUMMY_PORT {dummy_port_in} \
+   CONFIG.PHY_TYPE {SGMII} \
+   CONFIG.RXCSUM {Full} \
+   CONFIG.TXCSUM {Full} \
+   CONFIG.lvdsclkrate {625} \
+   CONFIG.rxlane0_placement {DIFF_PAIR_2} \
+   CONFIG.rxnibblebitslice0used {false} \
+   CONFIG.txlane0_placement {DIFF_PAIR_1} \
+ ] $axi_ethernet_0
 
   # Create instance: carfield_xilinx_ip_0, and set properties
   set carfield_xilinx_ip_0 [ create_bd_cell -type ip -vlnv ethz.ch:user:carfield_xilinx_ip:1.0 carfield_xilinx_ip_0 ]
@@ -252,6 +299,12 @@ proc create_root_design { parentCell } {
    CONFIG.USE_LOCKED {false} \
  ] $clk_wiz_0
 
+  # Create instance: concat_irq, and set properties
+  set concat_irq [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat:2.1 concat_irq ]
+  set_property -dict [ list \
+   CONFIG.NUM_PORTS {12} \
+ ] $concat_irq
+
   # Create instance: ddr4_0, and set properties
   set ddr4_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:ddr4:2.2 ddr4_0 ]
   set_property -dict [ list \
@@ -260,6 +313,18 @@ proc create_root_design { parentCell } {
    CONFIG.C0_DDR4_BOARD_INTERFACE {ddr4_sdram} \
    CONFIG.System_Clock {No_Buffer} \
  ] $ddr4_0
+
+  # Create instance: dram_ila, and set properties
+  set dram_ila [ create_bd_cell -type ip -vlnv xilinx.com:ip:ila:6.2 dram_ila ]
+
+  # Create instance: gpio_ila, and set properties
+  set gpio_ila [ create_bd_cell -type ip -vlnv xilinx.com:ip:ila:6.2 gpio_ila ]
+  set_property -dict [ list \
+   CONFIG.C_ENABLE_ILA_AXI_MON {false} \
+   CONFIG.C_MONITOR_TYPE {Native} \
+   CONFIG.C_NUM_OF_PROBES {1} \
+   CONFIG.C_PROBE0_WIDTH {32} \
+ ] $gpio_ila
 
   # Create instance: high, and set properties
   set high [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 high ]
@@ -270,20 +335,11 @@ proc create_root_design { parentCell } {
    CONFIG.CONST_VAL {0} \
  ] $low
 
-  # Create instance: smartconnect_0, and set properties
-  set smartconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 smartconnect_0 ]
-  set_property -dict [ list \
-   CONFIG.HAS_ARESETN {1} \
-   CONFIG.NUM_CLKS {2} \
-   CONFIG.NUM_SI {1} \
- ] $smartconnect_0
+  # Create instance: periph_in_ila, and set properties
+  set periph_in_ila [ create_bd_cell -type ip -vlnv xilinx.com:ip:ila:6.2 periph_in_ila ]
 
-  # Create instance: smartconnect_1, and set properties
-  set smartconnect_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 smartconnect_1 ]
-  set_property -dict [ list \
-   CONFIG.NUM_CLKS {2} \
-   CONFIG.NUM_SI {1} \
- ] $smartconnect_1
+  # Create instance: periph_out_ila, and set properties
+  set periph_out_ila [ create_bd_cell -type ip -vlnv xilinx.com:ip:ila:6.2 periph_out_ila ]
 
   # Create instance: util_ds_buf_0, and set properties
   set util_ds_buf_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 util_ds_buf_0 ]
@@ -303,28 +359,76 @@ proc create_root_design { parentCell } {
    CONFIG.C_PROBE_OUT1_WIDTH {2} \
  ] $vio_0
 
+  # Create instance: xbar_dram, and set properties
+  set xbar_dram [ create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 xbar_dram ]
+  set_property -dict [ list \
+   CONFIG.HAS_ARESETN {1} \
+   CONFIG.NUM_CLKS {2} \
+   CONFIG.NUM_SI {1} \
+ ] $xbar_dram
+
+  # Create instance: xbar_periph_in, and set properties
+  set xbar_periph_in [ create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 xbar_periph_in ]
+  set_property -dict [ list \
+   CONFIG.NUM_SI {4} \
+ ] $xbar_periph_in
+
+  # Create instance: xbar_periph_out, and set properties
+  set xbar_periph_out [ create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 xbar_periph_out ]
+  set_property -dict [ list \
+   CONFIG.NUM_CLKS {3} \
+   CONFIG.NUM_MI {3} \
+   CONFIG.NUM_SI {1} \
+ ] $xbar_periph_out
+
   # Create interface connections
-  connect_bd_intf_net -intf_net carfield_xilinx_ip_0_dram_axi [get_bd_intf_pins carfield_xilinx_ip_0/dram_axi] [get_bd_intf_pins smartconnect_0/S00_AXI]
-  connect_bd_intf_net -intf_net carfield_xilinx_ip_0_periph_axi [get_bd_intf_pins carfield_xilinx_ip_0/periph_axi] [get_bd_intf_pins smartconnect_1/S00_AXI]
+  connect_bd_intf_net -intf_net Conn [get_bd_intf_pins carfield_xilinx_ip_0/periph_axi_m] [get_bd_intf_pins xbar_periph_out/S00_AXI]
+connect_bd_intf_net -intf_net [get_bd_intf_nets Conn] [get_bd_intf_pins periph_out_ila/SLOT_0_AXI] [get_bd_intf_pins xbar_periph_out/S00_AXI]
+  connect_bd_intf_net -intf_net axi_dma_0_M_AXIS_CNTRL [get_bd_intf_pins axi_dma_0/M_AXIS_CNTRL] [get_bd_intf_pins axi_ethernet_0/s_axis_txc]
+  connect_bd_intf_net -intf_net axi_dma_0_M_AXIS_MM2S [get_bd_intf_pins axi_dma_0/M_AXIS_MM2S] [get_bd_intf_pins axi_ethernet_0/s_axis_txd]
+  connect_bd_intf_net -intf_net axi_dma_0_M_AXI_MM2S [get_bd_intf_pins axi_dma_0/M_AXI_MM2S] [get_bd_intf_pins xbar_periph_in/S01_AXI]
+  connect_bd_intf_net -intf_net axi_dma_0_M_AXI_S2MM [get_bd_intf_pins axi_dma_0/M_AXI_S2MM] [get_bd_intf_pins xbar_periph_in/S02_AXI]
+  connect_bd_intf_net -intf_net axi_dma_0_M_AXI_SG [get_bd_intf_pins axi_dma_0/M_AXI_SG] [get_bd_intf_pins xbar_periph_in/S00_AXI]
+  connect_bd_intf_net -intf_net axi_ethernet_0_m_axis_rxd [get_bd_intf_pins axi_dma_0/S_AXIS_S2MM] [get_bd_intf_pins axi_ethernet_0/m_axis_rxd]
+  connect_bd_intf_net -intf_net axi_ethernet_0_m_axis_rxs [get_bd_intf_pins axi_dma_0/S_AXIS_STS] [get_bd_intf_pins axi_ethernet_0/m_axis_rxs]
+  connect_bd_intf_net -intf_net axi_ethernet_0_mdio [get_bd_intf_ports mdio_mdc] [get_bd_intf_pins axi_ethernet_0/mdio]
+  connect_bd_intf_net -intf_net axi_ethernet_0_sgmii [get_bd_intf_ports sgmii_lvds] [get_bd_intf_pins axi_ethernet_0/sgmii]
+  connect_bd_intf_net -intf_net carfield_xilinx_ip_0_dram_axi [get_bd_intf_pins carfield_xilinx_ip_0/dram_axi] [get_bd_intf_pins xbar_dram/S00_AXI]
   connect_bd_intf_net -intf_net ddr4_0_C0_DDR4 [get_bd_intf_ports ddr4_sdram] [get_bd_intf_pins ddr4_0/C0_DDR4]
   connect_bd_intf_net -intf_net diff_clock_rtl_1 [get_bd_intf_ports sys_clk] [get_bd_intf_pins util_ds_buf_0/CLK_IN_D]
-  connect_bd_intf_net -intf_net smartconnect_0_M00_AXI [get_bd_intf_pins ddr4_0/C0_DDR4_S_AXI] [get_bd_intf_pins smartconnect_0/M00_AXI]
-  connect_bd_intf_net -intf_net smartconnect_1_M00_AXI [get_bd_intf_pins ddr4_0/C0_DDR4_S_AXI_CTRL] [get_bd_intf_pins smartconnect_1/M00_AXI]
+  connect_bd_intf_net -intf_net sgmii_phyclk_1 [get_bd_intf_ports sgmii_phyclk] [get_bd_intf_pins axi_ethernet_0/lvds_clk]
+  connect_bd_intf_net -intf_net smartconnect_0_M00_AXI [get_bd_intf_pins ddr4_0/C0_DDR4_S_AXI] [get_bd_intf_pins xbar_dram/M00_AXI]
+connect_bd_intf_net -intf_net [get_bd_intf_nets smartconnect_0_M00_AXI] [get_bd_intf_pins ddr4_0/C0_DDR4_S_AXI] [get_bd_intf_pins dram_ila/SLOT_0_AXI]
+  connect_bd_intf_net -intf_net smartconnect_1_M00_AXI [get_bd_intf_pins axi_ethernet_0/s_axi] [get_bd_intf_pins xbar_periph_out/M00_AXI]
+  connect_bd_intf_net -intf_net smartconnect_2_M00_AXI [get_bd_intf_pins carfield_xilinx_ip_0/periph_axi_s] [get_bd_intf_pins xbar_periph_in/M00_AXI]
+connect_bd_intf_net -intf_net [get_bd_intf_nets smartconnect_2_M00_AXI] [get_bd_intf_pins periph_in_ila/SLOT_0_AXI] [get_bd_intf_pins xbar_periph_in/M00_AXI]
+  connect_bd_intf_net -intf_net xbar_periph_out_M01_AXI [get_bd_intf_pins axi_dma_0/S_AXI_LITE] [get_bd_intf_pins xbar_periph_out/M01_AXI]
+  connect_bd_intf_net -intf_net xbar_periph_out_M02_AXI [get_bd_intf_pins ddr4_0/C0_DDR4_S_AXI_CTRL] [get_bd_intf_pins xbar_periph_out/M02_AXI]
 
   # Create port connections
-  connect_bd_net -net carfield_xilinx_ip_0_dram_axi_m_aclk [get_bd_pins carfield_xilinx_ip_0/dram_axi_m_aclk] [get_bd_pins smartconnect_0/aclk]
-  connect_bd_net -net carfield_xilinx_ip_0_dram_axi_m_aresetn [get_bd_pins carfield_xilinx_ip_0/dram_axi_m_aresetn] [get_bd_pins smartconnect_0/aresetn]
+  connect_bd_net -net axi_dma_0_mm2s_cntrl_reset_out_n [get_bd_pins axi_dma_0/mm2s_cntrl_reset_out_n] [get_bd_pins axi_ethernet_0/axi_txc_arstn]
+  connect_bd_net -net axi_dma_0_mm2s_introut [get_bd_pins axi_dma_0/mm2s_introut] [get_bd_pins concat_irq/In2]
+  connect_bd_net -net axi_dma_0_mm2s_prmry_reset_out_n [get_bd_pins axi_dma_0/mm2s_prmry_reset_out_n] [get_bd_pins axi_ethernet_0/axi_txd_arstn]
+  connect_bd_net -net axi_dma_0_s2mm_introut [get_bd_pins axi_dma_0/s2mm_introut] [get_bd_pins concat_irq/In3]
+  connect_bd_net -net axi_dma_0_s2mm_prmry_reset_out_n [get_bd_pins axi_dma_0/s2mm_prmry_reset_out_n] [get_bd_pins axi_ethernet_0/axi_rxd_arstn]
+  connect_bd_net -net axi_dma_0_s2mm_sts_reset_out_n [get_bd_pins axi_dma_0/s2mm_sts_reset_out_n] [get_bd_pins axi_ethernet_0/axi_rxs_arstn]
+  connect_bd_net -net axi_ethernet_0_interrupt [get_bd_pins axi_ethernet_0/interrupt] [get_bd_pins concat_irq/In0]
+  connect_bd_net -net axi_ethernet_0_mac_irq [get_bd_pins axi_ethernet_0/mac_irq] [get_bd_pins concat_irq/In5]
+  connect_bd_net -net carfield_xilinx_ip_0_dram_axi_m_aclk [get_bd_pins carfield_xilinx_ip_0/dram_axi_m_aclk] [get_bd_pins xbar_dram/aclk]
+  connect_bd_net -net carfield_xilinx_ip_0_dram_axi_m_aresetn [get_bd_pins carfield_xilinx_ip_0/dram_axi_m_aresetn] [get_bd_pins ddr4_0/c0_ddr4_aresetn] [get_bd_pins xbar_dram/aresetn]
   connect_bd_net -net carfield_xilinx_ip_0_jtag_gnd_o [get_bd_ports jtag_gnd_o] [get_bd_pins carfield_xilinx_ip_0/jtag_gnd_o]
   connect_bd_net -net carfield_xilinx_ip_0_jtag_tdo_o [get_bd_ports jtag_tdo_o] [get_bd_pins carfield_xilinx_ip_0/jtag_tdo_o]
   connect_bd_net -net carfield_xilinx_ip_0_jtag_vdd_o [get_bd_ports jtag_vdd_o] [get_bd_pins carfield_xilinx_ip_0/jtag_vdd_o]
-  connect_bd_net -net carfield_xilinx_ip_0_periph_axi_m_aclk [get_bd_pins carfield_xilinx_ip_0/periph_axi_m_aclk] [get_bd_pins smartconnect_1/aclk]
-  connect_bd_net -net carfield_xilinx_ip_0_periph_axi_m_aresetn [get_bd_pins carfield_xilinx_ip_0/periph_axi_m_aresetn] [get_bd_pins smartconnect_1/aresetn]
+  connect_bd_net -net carfield_xilinx_ip_0_periph_axi_m_aclk [get_bd_pins carfield_xilinx_ip_0/periph_axi_m_aclk] [get_bd_pins periph_out_ila/clk] [get_bd_pins xbar_periph_out/aclk]
+  connect_bd_net -net carfield_xilinx_ip_0_periph_axi_m_aresetn [get_bd_pins axi_dma_0/axi_resetn] [get_bd_pins axi_ethernet_0/s_axi_lite_resetn] [get_bd_pins carfield_xilinx_ip_0/periph_axi_m_aresetn] [get_bd_pins xbar_periph_in/aresetn] [get_bd_pins xbar_periph_out/aresetn]
   connect_bd_net -net carfield_xilinx_ip_0_uart_tx_o [get_bd_ports uart_tx_o] [get_bd_pins carfield_xilinx_ip_0/uart_tx_o]
   connect_bd_net -net clk_wiz_0_clk_10 [get_bd_pins carfield_xilinx_ip_0/clk_10] [get_bd_pins clk_wiz_0/clk_10]
   connect_bd_net -net clk_wiz_0_clk_20 [get_bd_pins carfield_xilinx_ip_0/clk_20] [get_bd_pins clk_wiz_0/clk_20]
-  connect_bd_net -net clk_wiz_0_clk_50 [get_bd_pins carfield_xilinx_ip_0/clk_50] [get_bd_pins clk_wiz_0/clk_50] [get_bd_pins vio_0/clk]
+  connect_bd_net -net clk_wiz_0_clk_50 [get_bd_pins axi_dma_0/m_axi_mm2s_aclk] [get_bd_pins axi_dma_0/m_axi_s2mm_aclk] [get_bd_pins axi_dma_0/m_axi_sg_aclk] [get_bd_pins axi_dma_0/s_axi_lite_aclk] [get_bd_pins axi_ethernet_0/axis_clk] [get_bd_pins axi_ethernet_0/s_axi_lite_clk] [get_bd_pins carfield_xilinx_ip_0/clk_50] [get_bd_pins clk_wiz_0/clk_50] [get_bd_pins gpio_ila/clk] [get_bd_pins periph_in_ila/clk] [get_bd_pins vio_0/clk] [get_bd_pins xbar_periph_in/aclk] [get_bd_pins xbar_periph_out/aclk1]
   connect_bd_net -net clk_wiz_0_clk_100 [get_bd_pins carfield_xilinx_ip_0/clk_100] [get_bd_pins clk_wiz_0/clk_100]
-  connect_bd_net -net ddr4_0_c0_ddr4_ui_clk [get_bd_pins ddr4_0/c0_ddr4_ui_clk] [get_bd_pins smartconnect_0/aclk1] [get_bd_pins smartconnect_1/aclk1]
+  connect_bd_net -net concat_irq_dout [get_bd_pins carfield_xilinx_ip_0/gpio_i] [get_bd_pins concat_irq/dout] [get_bd_pins gpio_ila/probe0]
+  connect_bd_net -net ddr4_0_c0_ddr4_ui_clk [get_bd_pins ddr4_0/c0_ddr4_ui_clk] [get_bd_pins dram_ila/clk] [get_bd_pins xbar_dram/aclk1] [get_bd_pins xbar_periph_out/aclk2]
+  connect_bd_net -net dummy_port_in_1 [get_bd_ports dummy_port_in] [get_bd_pins axi_ethernet_0/dummy_port_in]
   connect_bd_net -net high_dout [get_bd_pins carfield_xilinx_ip_0/jtag_trst_ni] [get_bd_pins high/dout]
   connect_bd_net -net jtag_tck_i_1 [get_bd_ports jtag_tck_i] [get_bd_pins carfield_xilinx_ip_0/jtag_tck_i]
   connect_bd_net -net jtag_tdi_i_1 [get_bd_ports jtag_tdi_i] [get_bd_pins carfield_xilinx_ip_0/jtag_tdi_i]
@@ -337,14 +441,13 @@ proc create_root_design { parentCell } {
   connect_bd_net -net vio_0_probe_out1 [get_bd_pins carfield_xilinx_ip_0/boot_mode_safety_i] [get_bd_pins vio_0/probe_out1]
 
   # Create address segments
-  assign_bd_address -offset 0x00000000 -range 0x000100000000 -target_address_space [get_bd_addr_spaces carfield_xilinx_ip_0/dram_axi] [get_bd_addr_segs ddr4_0/C0_DDR4_MEMORY_MAP/C0_DDR4_ADDRESS_BLOCK] -force
-  assign_bd_address -offset 0x80000000 -range 0x00100000 -target_address_space [get_bd_addr_spaces carfield_xilinx_ip_0/periph_axi] [get_bd_addr_segs ddr4_0/C0_DDR4_MEMORY_MAP_CTRL/C0_REG] -force
+  assign_bd_address -offset 0x80000000 -range 0x80000000 -target_address_space [get_bd_addr_spaces carfield_xilinx_ip_0/dram_axi] [get_bd_addr_segs ddr4_0/C0_DDR4_MEMORY_MAP/C0_DDR4_ADDRESS_BLOCK] -force
+  assign_bd_address -offset 0x80000000 -range 0x00100000 -target_address_space [get_bd_addr_spaces carfield_xilinx_ip_0/periph_axi_m] [get_bd_addr_segs ddr4_0/C0_DDR4_MEMORY_MAP_CTRL/C0_REG] -force
 
 
   # Restore current instance
   current_bd_instance $oldCurInst
 
-  validate_bd_design
   save_bd_design
 }
 # End of create_root_design()
@@ -356,4 +459,6 @@ proc create_root_design { parentCell } {
 
 create_root_design ""
 
+
+common::send_gid_msg -ssname BD::TCL -id 2053 -severity "WARNING" "This Tcl script was generated from a block design that has not been validated. It is possible that design <$design_name> may result in errors during validation."
 

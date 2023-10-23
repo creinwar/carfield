@@ -41,7 +41,7 @@ foreach run $all_ooc_synth {
         puts "Launching run $run"
         lappend runs_queued $run
         # Default synthesis strategy
-        set_property strategy Flow_RuntimeOptimized [get_runs $run]
+        # set_property strategy Flow_RuntimeOptimized [get_runs $run]
     } else {
         puts "Skipping 100% complete run: $run"
     }
@@ -57,8 +57,8 @@ if {[llength $runs_queued] != 0} {
     reset_run synth_1
 }
 
-set_property strategy Flow_RuntimeOptimized [get_runs synth_1]
-set_property strategy Flow_RuntimeOptimized [get_runs impl_1]
+# set_property strategy Flow_RuntimeOptimized [get_runs synth_1]
+# set_property strategy Flow_RuntimeOptimized [get_runs impl_1]
 
 set_property STEPS.SYNTH_DESIGN.ARGS.RETIMING true [get_runs synth_1]
 # Enable sfcu due to package conflicts

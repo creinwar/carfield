@@ -125,6 +125,27 @@ set all_edge_propagator_ack [get_cells -hier -filter {ORIG_REF_NAME=="edge_propa
 set_property KEEP_HIERARCHY SOFT $all_edge_propagator_ack
 set_false_path -through [get_nets -filter {NAME=~*sync_b} -of_object [get_cells -hier -filter {ORIG_REF_NAME==pulp_sync_wedge || REF_NAME==pulp_sync_wedge}]]
 
+# Ethernet
+##############
+
+# i_carfield_xilinx/i_carfield/gen*_ethernet.i_ethernet_cdc_dst
+set_max_delay -datapath \
+ -from [get_pins i_carfield_xilinx/i_carfield/gen*_ethernet.i_ethernet_cdc_dst/i_cdc_fifo_gray_*/*reg*/C] \
+ -to [get_pins i_carfield_xilinx/i_carfield/i_cheshire_wrap/gen_ext_slv_src_cdc[3].i_cheshire_ext_slv_cdc_src/i_cdc_fifo_gray_*/i_spill_register/spill_register_flushable_i/*reg*/D] \
+ $SOC_TCK
+set_max_delay -datapath \
+ -from [get_pins i_carfield_xilinx/i_carfield/i_cheshire_wrap/gen_ext_slv_src_cdc[3].i_cheshire_ext_slv_cdc_src/i_cdc_fifo_gray_*/*reg*/C] \
+ -to [get_pins i_carfield_xilinx/i_carfield/gen*_ethernet.i_ethernet_cdc_dst/i_cdc_fifo_gray_*/i_spill_register/spill_register_flushable_i/*reg*/D] \
+ $SOC_TCK
+set_max_delay -datapath \
+ -from [get_pins i_carfield_xilinx/i_carfield/gen*_ethernet.i_ethernet_cdc_dst/i_cdc_fifo_gray_*/*reg*/C] \
+ -to [get_pins i_carfield_xilinx/i_carfield/i_cheshire_wrap/gen_ext_slv_src_cdc[3].i_cheshire_ext_slv_cdc_src/i_cdc_fifo_gray_*/*i_sync/*reg*/D] \
+ $SOC_TCK
+set_max_delay -datapath \
+ -from [get_pins i_carfield_xilinx/i_carfield/i_cheshire_wrap/gen_ext_slv_src_cdc[3].i_cheshire_ext_slv_cdc_src/i_cdc_fifo_gray_*/*reg*/C] \
+ -to [get_pins i_carfield_xilinx/i_carfield/gen*_ethernet.i_ethernet_cdc_dst/i_cdc_fifo_gray_*/*i_sync/*reg*/D] \
+ $SOC_TCK
+
 # Peripherals
 ##############
 

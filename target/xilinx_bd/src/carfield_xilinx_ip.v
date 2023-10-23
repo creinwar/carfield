@@ -10,18 +10,20 @@ module carfield_xilinx_ip
 (
 (* X_INTERFACE_INFO = "xilinx.com:signal:reset:1.0 RST.RESET RST" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME RST.RESET, POLARITY ACTIVE_HIGH" *)
   input  wire         cpu_reset          ,
-(* X_INTERFACE_INFO = "xilinx.com:signal:clock_rtl:1.0 clock clk_10" *)
+(* X_INTERFACE_INFO = "xilinx.com:signal:clock_rtl:1.0 clock clk_10" *) (* X_INTERFACE_PARAMETER = "FREQ_HZ 10000000" *)
   input  wire         clk_10             ,
-(* X_INTERFACE_INFO = "xilinx.com:signal:clock_rtl:1.0 clock clk_20" *)
+(* X_INTERFACE_INFO = "xilinx.com:signal:clock_rtl:1.0 clock clk_20" *) (* X_INTERFACE_PARAMETER = "FREQ_HZ 20000000" *)
   input  wire         clk_20             ,
-(* X_INTERFACE_INFO = "xilinx.com:signal:clock_rtl:1.0 clock clk_50" *)
+(* X_INTERFACE_INFO = "xilinx.com:signal:clock_rtl:1.0 clock clk_50" *) (* X_INTERFACE_PARAMETER = "FREQ_HZ 50000000" *)
   input  wire         clk_50             ,
-(* X_INTERFACE_INFO = "xilinx.com:signal:clock_rtl:1.0 clock clk_100" *)
+(* X_INTERFACE_INFO = "xilinx.com:signal:clock_rtl:1.0 clock clk_100" *) (* X_INTERFACE_PARAMETER = "FREQ_HZ 100000000" *)
   input  wire         clk_100            ,
 
   input  wire         testmode_i         ,
   input  wire [1:0]   boot_mode_i        ,
   input  wire [1:0]   boot_mode_safety_i ,
+
+  input  wire [31:0]  gpio_i,
 
   input  wire         jtag_tck_i         ,
   input  wire         jtag_tms_i         ,
@@ -34,7 +36,7 @@ module carfield_xilinx_ip
   output wire         uart_tx_o          ,
   input  wire         uart_rx_i          ,
 
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 dram_axi ARADDR" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 dram_axi ARADDR" *) (* X_INTERFACE_PARAMETER = "FREQ_HZ 50000000" *)
   output wire [47:0] dram_axi_m_axi_araddr,
 (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 dram_axi ARBURST" *)
   output wire [1:0] dram_axi_m_axi_arburst,
@@ -108,89 +110,169 @@ module carfield_xilinx_ip
   output wire [7:0] dram_axi_m_axi_wstrb,
 (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 dram_axi WVALID" *)
   output wire dram_axi_m_axi_wvalid,
-(* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 dram_axi CLK" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME dram_axi, ASSOCIATED_BUSIF dram_axi" *)
+(* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 dram_axi CLK" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME dram_axi, ASSOCIATED_BUSIF dram_axi, FREQ_HZ 100000000" *)
   output wire dram_axi_m_aclk,
 (* X_INTERFACE_INFO = "xilinx.com:signal:reset:1.0 aux_reset RST" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME aux_reset, POLARITY ACTIVE_LOW" *)
   output wire dram_axi_m_aresetn,
 
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi ARADDR" *)
+// MASTER AXI PERIPHERAL
+
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m ARADDR" *) (* X_INTERFACE_PARAMETER = "FREQ_HZ 50000000" *)
   output wire [47:0] periph_axi_m_axi_araddr,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi ARBURST" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m ARBURST" *)
   output wire [1:0] periph_axi_m_axi_arburst,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi ARCACHE" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m ARCACHE" *)
   output wire [3:0] periph_axi_m_axi_arcache,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi ARID" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m ARID" *)
   output wire [1:0]periph_axi_m_axi_arid,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi ARLEN" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m ARLEN" *)
   output wire [7:0] periph_axi_m_axi_arlen,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi ARLOCK" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m ARLOCK" *)
   output wire periph_axi_m_axi_arlock,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi ARPROT" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m ARPROT" *)
   output wire [2:0] periph_axi_m_axi_arprot,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi ARQOS" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m ARQOS" *)
   output wire [3:0] periph_axi_m_axi_arqos,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi ARREADY" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m ARREADY" *)
   input  wire periph_axi_m_axi_arready,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi ARSIZE" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m ARSIZE" *)
   output wire [2:0] periph_axi_m_axi_arsize,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi ARVALID" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m ARVALID" *)
   output wire periph_axi_m_axi_arvalid,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi AWADDR" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m AWADDR" *)
   output wire [47:0] periph_axi_m_axi_awaddr,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi AWBURST" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m AWBURST" *)
   output wire [1:0] periph_axi_m_axi_awburst,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi AWCACHE" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m AWCACHE" *)
   output wire [3:0] periph_axi_m_axi_awcache,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi AWID" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m AWID" *)
   output wire [1:0] periph_axi_m_axi_awid,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi AWLEN" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m AWLEN" *)
   output wire [7:0] periph_axi_m_axi_awlen,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi AWLOCK" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m AWLOCK" *)
   output wire periph_axi_m_axi_awlock,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi AWPROT" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m AWPROT" *)
   output wire [2:0] periph_axi_m_axi_awprot,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi AWQOS" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m AWQOS" *)
   output wire [3:0] periph_axi_m_axi_awqos,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi AWREADY" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m AWREADY" *)
   input  wire periph_axi_m_axi_awready,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi AWSIZE" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m AWSIZE" *)
   output wire [2:0] periph_axi_m_axi_awsize,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi AWVALID" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m AWVALID" *)
   output wire periph_axi_m_axi_awvalid,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi BID" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m BID" *)
   input  wire [1:0] periph_axi_m_axi_bid,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi BREADY" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m BREADY" *)
   output wire periph_axi_m_axi_bready,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi BRESP" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m BRESP" *)
   input  wire [1:0] periph_axi_m_axi_bresp,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi BVALID" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m BVALID" *)
   input  wire periph_axi_m_axi_bvalid,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi RDATA" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m RDATA" *)
   input  wire [63:0] periph_axi_m_axi_rdata,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi RID" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m RID" *)
   input  wire [1:0] periph_axi_m_axi_rid,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi RLAST" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m RLAST" *)
   input  wire periph_axi_m_axi_rlast,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi RREADY" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m RREADY" *)
   output wire periph_axi_m_axi_rready,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi RRESP" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m RRESP" *)
   input  wire [1:0] periph_axi_m_axi_rresp,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi RVALID" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m RVALID" *)
   input  wire periph_axi_m_axi_rvalid,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi WDATA" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m WDATA" *)
   output wire [63:0] periph_axi_m_axi_wdata,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi WLAST" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m WLAST" *)
   output wire periph_axi_m_axi_wlast,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi WREADY" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m WREADY" *)
   input  wire periph_axi_m_axi_wready,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi WSTRB" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m WSTRB" *)
   output wire [7:0] periph_axi_m_axi_wstrb,
-(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi WVALID" *)
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_m WVALID" *)
   output wire periph_axi_m_axi_wvalid,
-(* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 periph_axi CLK" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME periph_axi, ASSOCIATED_BUSIF periph_axi" *)
+(* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 periph_axi_m CLK" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME periph_axi_m, ASSOCIATED_BUSIF periph_axi_m, FREQ_HZ 100000000" *)
   output wire periph_axi_m_aclk,
-(* X_INTERFACE_INFO = "xilinx.com:signal:reset:1.0 aux_reset RST" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME aux_reset, POLARITY ACTIVE_LOW" *)
-  output wire periph_axi_m_aresetn
+(* X_INTERFACE_INFO = "xilinx.com:signal:reset:1.0 periph_axi_m RST" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME periph_axi_m, POLARITY ACTIVE_LOW" *)
+  output wire periph_axi_m_aresetn,
+
+// SLAVE AXI PERIPHERAL
+
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s ARADDR" *) (* X_INTERFACE_PARAMETER = "FREQ_HZ 50000000" *)
+  input wire [47:0] periph_axi_s_axi_araddr,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s ARBURST" *)
+  input wire [1:0] periph_axi_s_axi_arburst,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s ARCACHE" *)
+  input wire [3:0] periph_axi_s_axi_arcache,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s ARID" *)
+  input wire [1:0]periph_axi_s_axi_arid,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s ARLEN" *)
+  input wire [7:0] periph_axi_s_axi_arlen,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s ARLOCK" *)
+  input wire periph_axi_s_axi_arlock,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s ARPROT" *)
+  input wire [2:0] periph_axi_s_axi_arprot,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s ARQOS" *)
+  input wire [3:0] periph_axi_s_axi_arqos,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s ARREADY" *)
+  output  wire periph_axi_s_axi_arready,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s ARSIZE" *)
+  input wire [2:0] periph_axi_s_axi_arsize,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s ARVALID" *)
+  input wire periph_axi_s_axi_arvalid,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s AWADDR" *)
+  input wire [47:0] periph_axi_s_axi_awaddr,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s AWBURST" *)
+  input wire [1:0] periph_axi_s_axi_awburst,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s AWCACHE" *)
+  input wire [3:0] periph_axi_s_axi_awcache,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s AWID" *)
+  input wire [1:0] periph_axi_s_axi_awid,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s AWLEN" *)
+  input wire [7:0] periph_axi_s_axi_awlen,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s AWLOCK" *)
+  input wire periph_axi_s_axi_awlock,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s AWPROT" *)
+  input wire [2:0] periph_axi_s_axi_awprot,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s AWQOS" *)
+  input wire [3:0] periph_axi_s_axi_awqos,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s AWREADY" *)
+  output  wire periph_axi_s_axi_awready,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s AWSIZE" *)
+  input wire [2:0] periph_axi_s_axi_awsize,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s AWVALID" *)
+  input wire periph_axi_s_axi_awvalid,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s BID" *)
+  output  wire [1:0] periph_axi_s_axi_bid,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s BREADY" *)
+  input wire periph_axi_s_axi_bready,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s BRESP" *)
+  output  wire [1:0] periph_axi_s_axi_bresp,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s BVALID" *)
+  output  wire periph_axi_s_axi_bvalid,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s RDATA" *)
+  output  wire [63:0] periph_axi_s_axi_rdata,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s RID" *)
+  output  wire [1:0] periph_axi_s_axi_rid,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s RLAST" *)
+  output  wire periph_axi_s_axi_rlast,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s RREADY" *)
+  input wire periph_axi_s_axi_rready,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s RRESP" *)
+  output  wire [1:0] periph_axi_s_axi_rresp,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s RVALID" *)
+  output  wire periph_axi_s_axi_rvalid,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s WDATA" *)
+  input wire [63:0] periph_axi_s_axi_wdata,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s WLAST" *)
+  input wire periph_axi_s_axi_wlast,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s WREADY" *)
+  output  wire periph_axi_s_axi_wready,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s WSTRB" *)
+  input wire [7:0] periph_axi_s_axi_wstrb,
+(* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 periph_axi_s WVALID" *)
+  input wire periph_axi_s_axi_wvalid
+
 );
 
   carfield_xilinx i_carfield_xilinx (
@@ -203,6 +285,8 @@ module carfield_xilinx_ip
   .testmode_i        (testmode_i        ) ,
   .boot_mode_i       (boot_mode_i       ) ,
   .boot_mode_safety_i(boot_mode_safety_i) ,
+
+  .gpio_i      (gpio_i),
 
   .jtag_tck_i  (jtag_tck_i   ),
   .jtag_tms_i  (jtag_tms_i   ),
@@ -307,8 +391,51 @@ module carfield_xilinx_ip
   .periph_axi_m_axi_rdata (periph_axi_m_axi_rdata ),
   .periph_axi_m_axi_rresp (periph_axi_m_axi_rresp ),
   .periph_axi_m_axi_rlast (periph_axi_m_axi_rlast ),
-  .periph_axi_m_axi_rvalid(periph_axi_m_axi_rvalid)
+  .periph_axi_m_axi_rvalid(periph_axi_m_axi_rvalid),
 
+    // Peripheral axi
+
+  .periph_axi_s_axi_awid   (periph_axi_s_axi_awid   ),
+  .periph_axi_s_axi_awaddr (periph_axi_s_axi_awaddr ),
+  .periph_axi_s_axi_awlen  (periph_axi_s_axi_awlen  ),
+  .periph_axi_s_axi_awsize (periph_axi_s_axi_awsize ),
+  .periph_axi_s_axi_awburst(periph_axi_s_axi_awburst),
+  .periph_axi_s_axi_awlock (periph_axi_s_axi_awlock ),
+  .periph_axi_s_axi_awcache(periph_axi_s_axi_awcache),
+  .periph_axi_s_axi_awprot (periph_axi_s_axi_awprot ),
+  .periph_axi_s_axi_awqos  (periph_axi_s_axi_awqos  ),
+  .periph_axi_s_axi_awvalid(periph_axi_s_axi_awvalid),
+  .periph_axi_s_axi_awready(periph_axi_s_axi_awready),
+
+  .periph_axi_s_axi_wdata (periph_axi_s_axi_wdata ),
+  .periph_axi_s_axi_wstrb (periph_axi_s_axi_wstrb ),
+  .periph_axi_s_axi_wlast (periph_axi_s_axi_wlast ),
+  .periph_axi_s_axi_wvalid(periph_axi_s_axi_wvalid),
+  .periph_axi_s_axi_wready(periph_axi_s_axi_wready),
+
+  .periph_axi_s_axi_bready(periph_axi_s_axi_bready),
+  .periph_axi_s_axi_bid   (periph_axi_s_axi_bid   ),
+  .periph_axi_s_axi_bresp (periph_axi_s_axi_bresp ),
+  .periph_axi_s_axi_bvalid(periph_axi_s_axi_bvalid),
+
+  .periph_axi_s_axi_arid   (periph_axi_s_axi_arid   ),
+  .periph_axi_s_axi_araddr (periph_axi_s_axi_araddr ),
+  .periph_axi_s_axi_arlen  (periph_axi_s_axi_arlen  ),
+  .periph_axi_s_axi_arsize (periph_axi_s_axi_arsize ),
+  .periph_axi_s_axi_arburst(periph_axi_s_axi_arburst),
+  .periph_axi_s_axi_arlock (periph_axi_s_axi_arlock ),
+  .periph_axi_s_axi_arcache(periph_axi_s_axi_arcache),
+  .periph_axi_s_axi_arprot (periph_axi_s_axi_arprot ),
+  .periph_axi_s_axi_arqos  (periph_axi_s_axi_arqos  ),
+  .periph_axi_s_axi_arvalid(periph_axi_s_axi_arvalid),
+  .periph_axi_s_axi_arready(periph_axi_s_axi_arready),
+
+  .periph_axi_s_axi_rready(periph_axi_s_axi_rready),
+  .periph_axi_s_axi_rid   (periph_axi_s_axi_rid   ),
+  .periph_axi_s_axi_rdata (periph_axi_s_axi_rdata ),
+  .periph_axi_s_axi_rresp (periph_axi_s_axi_rresp ),
+  .periph_axi_s_axi_rlast (periph_axi_s_axi_rlast ),
+  .periph_axi_s_axi_rvalid(periph_axi_s_axi_rvalid)
   );
 
 endmodule
