@@ -133,6 +133,7 @@ xilinx.com:ip:ddr4:2.2\
 xilinx.com:ip:ila:6.2\
 xilinx.com:ip:xlconstant:1.1\
 xilinx.com:ip:util_ds_buf:2.1\
+xilinx.com:ip:util_vector_logic:2.0\
 xilinx.com:ip:vio:3.0\
 xilinx.com:ip:smartconnect:1.0\
 "
@@ -349,12 +350,20 @@ proc create_root_design { parentCell } {
    CONFIG.USE_BOARD_FLOW {true} \
  ] $util_ds_buf_0
 
+  # Create instance: util_vector_logic_0, and set properties
+  set util_vector_logic_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_vector_logic:2.0 util_vector_logic_0 ]
+  set_property -dict [ list \
+   CONFIG.C_OPERATION {or} \
+   CONFIG.C_SIZE {1} \
+   CONFIG.LOGO_FILE {data/sym_orgate.png} \
+ ] $util_vector_logic_0
+
   # Create instance: vio_0, and set properties
   set vio_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:vio:3.0 vio_0 ]
   set_property -dict [ list \
    CONFIG.C_EN_PROBE_IN_ACTIVITY {0} \
    CONFIG.C_NUM_PROBE_IN {0} \
-   CONFIG.C_NUM_PROBE_OUT {2} \
+   CONFIG.C_NUM_PROBE_OUT {3} \
    CONFIG.C_PROBE_OUT0_WIDTH {2} \
    CONFIG.C_PROBE_OUT1_WIDTH {2} \
  ] $vio_0
@@ -434,13 +443,20 @@ connect_bd_intf_net -intf_net [get_bd_intf_nets smartconnect_2_M00_AXI] [get_bd_
   connect_bd_net -net jtag_tdi_i_1 [get_bd_ports jtag_tdi_i] [get_bd_pins carfield_xilinx_ip_0/jtag_tdi_i]
   connect_bd_net -net jtag_tms_i_1 [get_bd_ports jtag_tms_i] [get_bd_pins carfield_xilinx_ip_0/jtag_tms_i]
   connect_bd_net -net low_dout [get_bd_pins carfield_xilinx_ip_0/testmode_i] [get_bd_pins low/dout]
-  connect_bd_net -net reset_1 [get_bd_ports reset] [get_bd_pins carfield_xilinx_ip_0/cpu_reset] [get_bd_pins clk_wiz_0/reset] [get_bd_pins ddr4_0/sys_rst]
+  connect_bd_net -net reset_1 [get_bd_ports reset] [get_bd_pins util_vector_logic_0/Op1]
   connect_bd_net -net uart_rx_i_1 [get_bd_ports uart_rx_i] [get_bd_pins carfield_xilinx_ip_0/uart_rx_i]
   connect_bd_net -net util_ds_buf_0_IBUF_OUT [get_bd_pins clk_wiz_0/clk_in1] [get_bd_pins ddr4_0/c0_sys_clk_i] [get_bd_pins util_ds_buf_0/IBUF_OUT]
+  connect_bd_net -net util_vector_logic_0_Res [get_bd_pins carfield_xilinx_ip_0/cpu_reset] [get_bd_pins clk_wiz_0/reset] [get_bd_pins ddr4_0/sys_rst] [get_bd_pins util_vector_logic_0/Res]
   connect_bd_net -net vio_0_probe_out0 [get_bd_pins carfield_xilinx_ip_0/boot_mode_i] [get_bd_pins vio_0/probe_out0]
   connect_bd_net -net vio_0_probe_out1 [get_bd_pins carfield_xilinx_ip_0/boot_mode_safety_i] [get_bd_pins vio_0/probe_out1]
+  connect_bd_net -net vio_0_probe_out2 [get_bd_pins util_vector_logic_0/Op2] [get_bd_pins vio_0/probe_out2]
 
   # Create address segments
+  assign_bd_address -offset 0x00000000 -range 0x0001000000000000 -target_address_space [get_bd_addr_spaces axi_dma_0/Data_SG] [get_bd_addr_segs carfield_xilinx_ip_0/periph_axi_s/reg0] -force
+  assign_bd_address -offset 0x00000000 -range 0x0001000000000000 -target_address_space [get_bd_addr_spaces axi_dma_0/Data_MM2S] [get_bd_addr_segs carfield_xilinx_ip_0/periph_axi_s/reg0] -force
+  assign_bd_address -offset 0x00000000 -range 0x0001000000000000 -target_address_space [get_bd_addr_spaces axi_dma_0/Data_S2MM] [get_bd_addr_segs carfield_xilinx_ip_0/periph_axi_s/reg0] -force
+  assign_bd_address -offset 0x41E00000 -range 0x00010000 -target_address_space [get_bd_addr_spaces carfield_xilinx_ip_0/periph_axi_m] [get_bd_addr_segs axi_dma_0/S_AXI_LITE/Reg] -force
+  assign_bd_address -offset 0x40C00000 -range 0x00040000 -target_address_space [get_bd_addr_spaces carfield_xilinx_ip_0/periph_axi_m] [get_bd_addr_segs axi_ethernet_0/s_axi/Reg0] -force
   assign_bd_address -offset 0x80000000 -range 0x80000000 -target_address_space [get_bd_addr_spaces carfield_xilinx_ip_0/dram_axi] [get_bd_addr_segs ddr4_0/C0_DDR4_MEMORY_MAP/C0_DDR4_ADDRESS_BLOCK] -force
   assign_bd_address -offset 0x80000000 -range 0x00100000 -target_address_space [get_bd_addr_spaces carfield_xilinx_ip_0/periph_axi_m] [get_bd_addr_segs ddr4_0/C0_DDR4_MEMORY_MAP_CTRL/C0_REG] -force
 
@@ -448,6 +464,7 @@ connect_bd_intf_net -intf_net [get_bd_intf_nets smartconnect_2_M00_AXI] [get_bd_
   # Restore current instance
   current_bd_instance $oldCurInst
 
+  validate_bd_design
   save_bd_design
 }
 # End of create_root_design()
@@ -459,6 +476,4 @@ connect_bd_intf_net -intf_net [get_bd_intf_nets smartconnect_2_M00_AXI] [get_bd_
 
 create_root_design ""
 
-
-common::send_gid_msg -ssname BD::TCL -id 2053 -severity "WARNING" "This Tcl script was generated from a block design that has not been validated. It is possible that design <$design_name> may result in errors during validation."
 
