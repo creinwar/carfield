@@ -127,10 +127,10 @@ packages:
     - register_interface
     - tech_cells_generic
   cheshire:
-    revision: 0a06d3f13a074cee01ded62cef2d6eb1142e6d8b
+    revision: 987d8713ac33decc4d8f340a898ce21bf92c987e
     version: null
     source:
-      Git: https://github.com/pulp-platform/cheshire.git
+      Git: https://github.com/creinwar/cheshire.git
     dependencies:
     - apb_uart
     - axi
@@ -205,10 +205,10 @@ packages:
     - fpnew
     - tech_cells_generic
   cva6:
-    revision: ec242579ea25a1f6bef7235591814dd1e475f90c
+    revision: a3226ad3de441e168df2162928a223e0d195d402
     version: null
     source:
-      Git: https://github.com/pulp-platform/cva6.git
+      Git: https://github.com/creinwar/cva6.git
     dependencies:
     - axi
     - common_cells
